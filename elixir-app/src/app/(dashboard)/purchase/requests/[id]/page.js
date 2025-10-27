@@ -92,7 +92,7 @@ export default function PurchaseRequestDetailPage() {
         <button
           onClick={onStartPurchasing}
           disabled={updating}
-          className="rounded-lg bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 disabled:opacity-60 cursor-pointer"
+          className="rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black px-4 py-2 disabled:opacity-60 cursor-pointer transition"
         >
           {updating ? "กำลังอัปเดต..." : "ดำเนินการจัดซื้อ"}
         </button>
@@ -103,7 +103,7 @@ export default function PurchaseRequestDetailPage() {
         <button
           onClick={onMarkReceived}
           disabled={updating}
-          className="rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 disabled:opacity-60 cursor-pointer"
+          className="rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 disabled:opacity-60 cursor-pointer transition"
         >
           {updating ? "กำลังอัปเดต..." : "ได้รับของแล้ว"}
         </button>
@@ -150,7 +150,7 @@ export default function PurchaseRequestDetailPage() {
             value={data.H_Fullname || data.HeadName || data.H_Username || "-"}
           />
           <Row
-            label="ผู้จัดซื้อ"
+            label="มอบหมาย"
             value={data.PD_Fullname || data.PDName || data.PD_Username || "-"}
           />
 

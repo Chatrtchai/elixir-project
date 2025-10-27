@@ -63,7 +63,7 @@ export default function PurchaseRequestsPage() {
     <div className="p-6 space-y-6">
       <header className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[--color-primary]">
+          <h1 className="text-2xl font-bold text-[var(--color-primary)]">
             รายการคำขอจัดซื้อ
           </h1>
           <p className="text-sm text-gray-500">
@@ -94,13 +94,14 @@ export default function PurchaseRequestsPage() {
         </select>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border">
+      <div className="overflow-y-auto max-h-[600px] pr-[10px]">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600">
+          <thead className="bg-gray-50 text-gray-600 sticky top-0">
             <tr>
               <th className="text-left px-4 py-2">เลขที่คำขอ</th>
               <th className="text-left px-4 py-2">ผู้ขอ</th>
               <th className="text-left px-4 py-2">วันที่สร้าง</th>
+              <th className="text-left px-4 py-2">อัพเดตล่าสุด</th>
               <th className="text-left px-4 py-2">สถานะ</th>
               <th className="text-center px-4 py-2">ดำเนินการ</th>
             </tr>
@@ -111,7 +112,22 @@ export default function PurchaseRequestsPage() {
                 <td className="px-4 py-2">{r.R_No}</td>
                 <td className="px-4 py-2">{r.HKName}</td>
                 <td className="px-4 py-2">
-                  {new Date(r.R_DateTime).toLocaleString()}
+                  {new Date(r.R_DateTime).toLocaleString("th-TH", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </td>
+                <td className="px-4 py-2">
+                  {new Date(r.R_LastModified).toLocaleString("th-TH", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </td>
                 <td className="px-4 py-2">
                   <span className={badge(r.R_Status)}>

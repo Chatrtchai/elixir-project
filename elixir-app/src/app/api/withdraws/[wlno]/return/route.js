@@ -1,171 +1,266 @@
 // src/app/api/withdraws/[wlno]/return/route.js
 import { NextResponse } from "next/server";
 import { createConnection } from "@/lib/db";
+import { readSession } from "@/lib/auth";
 
-// (แนะนำ) ชัดเจนว่าใช้ node runtime ไม่ใช่ edge
-export const runtime = "nodejs";
+/**
+ * รูปแบบ payload (ใช้ได้ทั้ง PATCH/POST)
+ * {
+ *   "items": [{ "itemId": 1, "amount": 2 }, ...],
+ *   "note": "ข้อความเพิ่มเติม (ออปชัน)"
+ * }
+ *
+ * หมายเหตุ:
+ * - ถ้ามีแต่ detailId ก็ได้ แต่ควรส่ง itemId มาด้วยจะตรงกว่า:
+ *   { detailId, itemId, amount }
+ */
 
-export async function PATCH(req, context) {
-  // ✅ ต้อง await context เพื่อให้ได้ params
-  const { params } = await context;
-  const wlno = Number(params?.wlno);
-  if (!wlno) {
-    return NextResponse.json(
-      { error: "รหัสใบเบิกไม่ถูกต้อง" },
-      { status: 400 }
-    );
-  }
-
-  // ✅ parse body ให้ปลอดภัย
-  let body;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json(
-      { error: "รูปแบบข้อมูลไม่ถูกต้อง" },
-      { status: 400 }
-    );
-  }
-
-  const items = Array.isArray(body?.items) ? body.items : [];
-  if (items.length === 0) {
-    return NextResponse.json({ error: "ไม่มีรายการคืน" }, { status: 400 });
-  }
-
-  // ✅ validate payload ทีละแถว
+// ---------- Utilities ----------
+function parseItems(bodyItems = []) {
+  const items = Array.isArray(bodyItems) ? bodyItems : [];
+  const out = [];
   for (const it of items) {
-    if (
-      typeof it?.detailId !== "number" ||
-      typeof it?.amount !== "number" ||
-      !Number.isFinite(it.detailId) ||
-      !Number.isFinite(it.amount) ||
-      it.amount < 0
-    ) {
-      return NextResponse.json(
-        { error: "ข้อมูลรายการคืนไม่ถูกต้อง" },
-        { status: 400 }
-      );
+    const itemId = Number(it?.itemId);
+    const amount = Number(it?.amount);
+    const detailId = it?.detailId != null ? Number(it.detailId) : null;
+    if (!Number.isInteger(itemId) || itemId <= 0) {
+      throw new Error("invalid_item_id");
     }
+    if (!Number.isInteger(amount) || amount <= 0) {
+      // คืนอย่างน้อย 1 ชิ้น
+      throw new Error("invalid_amount");
+    }
+    out.push({ itemId, amount, detailId });
   }
+  if (!out.length) throw new Error("items_required");
+  return out;
+}
 
-  let conn;
+async function authHKorAdmin(req) {
+  const session = await readSession(req);
+  if (!session) throw new Error("unauthorized");
+  const role = (session.role || "").toUpperCase();
+  if (role !== "HOUSEKEEPER" && role !== "ADMIN") throw new Error("forbidden");
+  return session;
+}
+
+// ---------- PATCH: อัปเดตสต็อก & รายการใบเบิก ----------
+export async function PATCH(req, { params }) {
   try {
-    conn = await createConnection();
-    await conn.beginTransaction();
+    const session = await authHKorAdmin(req);
+    const wlno = Number(params?.wlno);
+    if (!Number.isInteger(wlno) || wlno <= 0) {
+      return NextResponse.json({ error: "invalid_wlno" }, { status: 400 });
+    }
 
-    for (const r of items) {
-      // ล็อคแถวไว้กัน race condition
-      const [rows] = await conn.execute(
-        `
-        SELECT 
-          wd.WD_Id,
-          wd.WL_No,
-          wd.I_Id,
-          wd.WD_Amount_Left,
-          COALESCE(wd.WD_Return_Left, 0)         AS WD_Return_Left,
-          COALESCE(wd.WD_After_Return_Amount, 0) AS WD_After_Return_Amount,
-          i.I_Quantity
-        FROM withdraw_detail wd
-        JOIN item i ON i.I_Id = wd.I_Id
-        WHERE wd.WD_Id = ? AND wd.WL_No = ?
-        FOR UPDATE
-        `,
-        [r.detailId, wlno]
+    const body = await req.json().catch(() => ({}));
+    const items = parseItems(body.items);
+
+    const conn = await createConnection();
+    try {
+      await conn.beginTransaction();
+
+      // 0) ตรวจใบเบิก & ล็อก
+      const [wlRows] = await conn.execute(
+        "SELECT WL_No FROM withdraw_list WHERE WL_No = ? FOR UPDATE",
+        [wlno]
+      );
+      if (!wlRows.length) throw new Error("withdraw_list_not_found");
+
+      // 1) คืนของ: ล็อกสินค้า แล้วเพิ่มสต็อก + อัปเดต WD
+      for (const it of items) {
+        const { itemId, amount, detailId } = it;
+
+        // ล็อกสินค้า
+        const [lockRows] = await conn.execute(
+          "SELECT I_Quantity FROM item WHERE I_Id = ? FOR UPDATE",
+          [itemId]
+        );
+        if (!lockRows.length) throw new Error(`item_not_found:${itemId}`);
+
+        // เพิ่มสต็อก (คืนของ)
+        await conn.execute(
+          "UPDATE item SET I_Quantity = I_Quantity + ? WHERE I_Id = ?",
+          [amount, itemId]
+        );
+
+        // อัปเดตแถว withdraw_detail ของใบนี้:
+        // - ถ้ารู้ WD_Id ให้ใช้เจาะจง, ถ้าไม่รู้ให้อิง WL_No+I_Id (อาจกระทบหลายแถว ถ้ามีหลายดีเทลของชิ้นเดียวกัน)
+        if (detailId && Number.isInteger(detailId)) {
+          await conn.execute(
+            `UPDATE withdraw_detail
+               SET WD_Return_Left = WD_Return_Left + ?,
+                   WD_Amount_Left = GREATEST(WD_Amount_Left - ?, 0),
+                   WD_After_Return_Amount = (SELECT I_Quantity FROM item WHERE I_Id = ?)
+             WHERE WD_Id = ? AND WL_No = ?`,
+            [amount, amount, itemId, detailId, wlno]
+          );
+        } else {
+          await conn.execute(
+            `UPDATE withdraw_detail
+               SET WD_Return_Left = WD_Return_Left + ?,
+                   WD_Amount_Left = GREATEST(WD_Amount_Left - ?, 0),
+                   WD_After_Return_Amount = (SELECT I_Quantity FROM item WHERE I_Id = ?)
+             WHERE WL_No = ? AND I_Id = ?`,
+            [amount, amount, itemId, wlno, itemId]
+          );
+        }
+      }
+
+      // 2) ถ้าคืนครบทุกบรรทัด → ปิดใบ (ออปชัน)
+      const [[sumRow]] = await conn.execute(
+        `SELECT SUM(WD_Amount_Left) AS left_sum
+           FROM withdraw_detail
+          WHERE WL_No = ?`,
+        [wlno]
+      );
+      const leftSum = Number(sumRow?.left_sum ?? 0);
+
+      await conn.execute(
+        `UPDATE withdraw_list
+            SET WL_Is_Finished = 1,
+                WL_Finish_DateTime = NOW()
+          WHERE WL_No = ?`,
+        [wlno]
       );
 
-      if (!rows.length) {
-        await conn.rollback();
+      await conn.commit();
+      await conn.end();
+      return NextResponse.json(
+        {
+          ok: true,
+          WL_No: wlno,
+          finished: leftSum === 0,
+        },
+        { status: 200 }
+      );
+    } catch (e) {
+      await conn.rollback().catch(() => {});
+      await conn.end().catch(() => {});
+      if (e.message === "withdraw_list_not_found") {
         return NextResponse.json(
-          { error: `ไม่พบรายการ WD_Id=${r.detailId} ในใบเบิกนี้` },
+          { error: "withdraw_list_not_found" },
           { status: 404 }
         );
       }
-
-      const d = rows[0];
-
-      // ห้ามคืนเกินของที่ยังเหลือในรายการนี้
-      if (r.amount > Number(d.WD_Amount_Left)) {
-        await conn.rollback();
-        return NextResponse.json(
-          { error: `จำนวนคืนเกินของคงเหลือ (detailId=${r.detailId})` },
-          { status: 409 }
-        );
+      if (String(e.message || "").startsWith("item_not_found")) {
+        return NextResponse.json({ error: e.message }, { status: 404 });
       }
-
-      if (r.amount === 0) {
-        // เคส “ใช้หมดไม่คืน” — ปิดรายการนี้ (ของคงเหลือ = 0) และไม่เพิ่มสต็อก
-        await conn.execute(
-          `UPDATE withdraw_detail
-             SET WD_Amount_Left = 0
-           WHERE WD_Id = ? AND WL_No = ?`,
-          [d.WD_Id, wlno]
-        );
-      } else {
-        // คืนของ → เพิ่มสต็อก และปรับสถานะรายการ
-        const afterStock = Number(d.I_Quantity) + Number(r.amount);
-
-        // 1) เพิ่มของเข้าสต็อก
-        await conn.execute(`UPDATE item SET I_Quantity = ? WHERE I_Id = ?`, [
-          afterStock,
-          d.I_Id,
-        ]);
-
-        // 2) ปรับค่าสถานะใน withdraw_detail
-        await conn.execute(
-          `
-          UPDATE withdraw_detail
-          SET 
-            -- จำนวนที่ยังต้องคืน ลดลง
-            WD_Return_Left = GREATEST(COALESCE(WD_Return_Left, 0) - ?, 0),
-
-            -- ของคงเหลือในรายการนี้ ลดลง (ทั้งใช้หมดหรือคืนก็ลด)
-            WD_Amount_Left = GREATEST(COALESCE(WD_Amount_Left, 0) - ?, 0),
-
-            -- จำนวนที่คืนไปแล้ว สะสมเพิ่มขึ้น
-            WD_After_Return_Amount = COALESCE(WD_After_Return_Amount, 0) + ?
-          WHERE WD_Id = ? AND WL_No = ?
-          `,
-          [r.amount, r.amount, r.amount, d.WD_Id, wlno]
-        );
+      if (
+        ["items_required", "invalid_item_id", "invalid_amount"].includes(
+          e.message
+        )
+      ) {
+        return NextResponse.json({ error: e.message }, { status: 400 });
       }
-    }
-
-    // เช็คว่าทั้งใบเบิกยังเหลือของอยู่ไหม
-    const [[remain]] = await conn.execute(
-      `SELECT SUM(WD_Amount_Left) AS leftSum
-       FROM withdraw_detail
-       WHERE WL_No = ?`,
-      [wlno]
-    );
-
-    if (Number(remain?.leftSum || 0) === 0) {
-      // ปิดใบเบิก ถ้าไม่มีของเหลืออยู่ในทุกรายการ
-      await conn.execute(
-        `
-        UPDATE withdraw_list
-        SET WL_Is_Finished = 1,
-            WL_Finish_DateTime = NOW()
-        WHERE WL_No = ?
-        `,
-        [wlno]
+      if (e.message === "unauthorized") {
+        return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+      }
+      if (e.message === "forbidden") {
+        return NextResponse.json({ error: "forbidden" }, { status: 403 });
+      }
+      console.error("PATCH /api/withdraws/[wlno]/return error:", e);
+      return NextResponse.json(
+        { error: "return_patch_failed" },
+        { status: 500 }
       );
     }
-
-    await conn.commit();
-    return NextResponse.json({
-      ok: true,
-      wlno,
-      leftSum: Number(remain?.leftSum || 0),
-    });
   } catch (e) {
+    // อ่าน body ไม่ได้/อื่นๆ
+    return NextResponse.json({ error: "bad_request" }, { status: 400 });
+  }
+}
+
+// ---------- POST: ลงประวัติธุรกรรม ----------
+export async function POST(req, { params }) {
+  try {
+    const session = await authHKorAdmin(req);
+    const wlno = Number(params?.wlno);
+    if (!Number.isInteger(wlno) || wlno <= 0) {
+      return NextResponse.json({ error: "invalid_wlno" }, { status: 400 });
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const items = parseItems(body.items);
+    const extraNote = (body.note || "").trim();
+
+    const conn = await createConnection();
     try {
-      if (conn) await conn.rollback();
-    } catch {}
-    return NextResponse.json(
-      { error: e?.message || "เกิดข้อผิดพลาดภายในระบบ" },
-      { status: 500 }
-    );
-  } finally {
-    if (conn) await conn.end(); // ✅ ใช้ end() กับ connection ที่สร้างจาก createConnection()
+      await conn.beginTransaction();
+
+      // ตรวจว่ามีใบจริง
+      const [wlRows] = await conn.execute(
+        "SELECT WL_No FROM withdraw_list WHERE WL_No = ?",
+        [wlno]
+      );
+      if (!wlRows.length) throw new Error("withdraw_list_not_found");
+
+      // สร้าง TRANSACTION head
+      const baseNote = "คืนของ";
+      const fullNote = extraNote ? `${baseNote} - ${extraNote}` : baseNote;
+
+      const [trxHead] = await conn.execute(
+        "INSERT INTO `transaction` (`T_DateTime`, `T_Note`, `HK_Username`) VALUES (NOW(), ?, ?)",
+        [fullNote, session.sub]
+      );
+      const T_No = trxHead.insertId;
+
+      // เติมรายละเอียด: ใช้ค่ายอดคงเหลือปัจจุบันหลัง PATCH แล้ว
+      for (const it of items) {
+        const { itemId, amount } = it;
+        const [[after]] = await conn.execute(
+          "SELECT I_Quantity FROM item WHERE I_Id = ?",
+          [itemId]
+        );
+        if (!after) throw new Error(`item_not_found:${itemId}`);
+        const afterLeft = Number(after.I_Quantity);
+
+        await conn.execute(
+          `INSERT INTO transaction_detail
+             (TD_Total_Left, TD_Amount_Changed, T_No, I_Id)
+           VALUES (?, ?, ?, ?)`,
+          [afterLeft, amount, T_No, itemId]
+        );
+      }
+
+      await conn.commit();
+      await conn.end();
+      return NextResponse.json(
+        { ok: true, WL_No: wlno, T_No },
+        { status: 201 }
+      );
+    } catch (e) {
+      await conn.rollback().catch(() => {});
+      await conn.end().catch(() => {});
+      if (e.message === "withdraw_list_not_found") {
+        return NextResponse.json(
+          { error: "withdraw_list_not_found" },
+          { status: 404 }
+        );
+      }
+      if (String(e.message || "").startsWith("item_not_found")) {
+        return NextResponse.json({ error: e.message }, { status: 404 });
+      }
+      if (
+        ["items_required", "invalid_item_id", "invalid_amount"].includes(
+          e.message
+        )
+      ) {
+        return NextResponse.json({ error: e.message }, { status: 400 });
+      }
+      if (e.message === "unauthorized") {
+        return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+      }
+      if (e.message === "forbidden") {
+        return NextResponse.json({ error: "forbidden" }, { status: 403 });
+      }
+      console.error("POST /api/withdraws/[wlno]/return error:", e);
+      return NextResponse.json(
+        { error: "return_post_failed" },
+        { status: 500 }
+      );
+    }
+  } catch {
+    return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
 }

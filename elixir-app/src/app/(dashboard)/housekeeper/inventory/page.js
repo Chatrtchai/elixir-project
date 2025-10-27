@@ -13,6 +13,9 @@ export default function HKInventoryPage() {
   const [printing, setPrinting] = useState(false);
   const [printRows, setPrintRows] = useState([]);
 
+  // ใช้ยกเลิก request ก่อนหน้าเมื่อพิมพ์ต่อ
+  const abortRef = useRef(null);
+
   const printRef = useRef(null);
 
   // ✅ react-to-print (v3+)
@@ -23,26 +26,48 @@ export default function HKInventoryPage() {
     removeAfterPrint: true,
   });
 
-  // โหลดข้อมูลสำหรับแสดงบนหน้า
-  const fetchData = async () => {
+  // โหลดข้อมูล (รองรับยกเลิกคำขอเก่า)
+  const fetchData = useCallback(async (keyword) => {
     try {
+      // ยกเลิก request เก่า ถ้ามี
+      if (abortRef.current) abortRef.current.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       setLoading(true);
+
       const u = new URL("/api/items", window.location.origin);
-      if (q) u.searchParams.set("q", q);
-      const res = await fetch(u.toString(), { cache: "no-store" });
+      if (keyword) u.searchParams.set("q", keyword);
+
+      const res = await fetch(u.toString(), {
+        cache: "no-store",
+        signal: controller.signal,
+      });
       const data = await res.json();
       setRows(Array.isArray(data) ? data : []);
     } catch (e) {
-      console.error("fetch items failed", e);
-      setRows([]);
+      // ถ้าเป็น AbortError ให้เงียบไว้
+      if (e?.name !== "AbortError") {
+        console.error("fetch items failed", e);
+        setRows([]);
+      }
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchData();
   }, []);
+
+  // โหลดรอบแรก
+  useEffect(() => {
+    fetchData("");
+  }, []);
+
+  // ⌨️ พิมพ์แล้วค้นหาอัตโนมัติ (debounce 300ms)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      fetchData(q.trim());
+    }, 300);
+    return () => clearTimeout(t);
+  }, [q, fetchData]);
 
   // ดึงข้อมูลทั้งหมด แล้วพิมพ์
   const printAll = useCallback(async () => {
@@ -73,16 +98,15 @@ export default function HKInventoryPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[--color-primary]">
+        <h1 className="text-2xl font-bold text-[var(--color-primary)]">
           รายการของทั้งหมด
         </h1>
-
         <div className="flex gap-2">
           {/* 🖨️ พิมพ์ทั้งหมด */}
           <button
             onClick={printAll}
             disabled={printing}
-            className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
+            className="rounded-md border px-3 py-2 text-white text-sm bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] disabled:opacity-50 cursor-pointer transition"
           >
             {printing ? "กำลังเตรียมพิมพ์..." : "พิมพ์รายการทั้งหมด"}
           </button>
@@ -90,13 +114,13 @@ export default function HKInventoryPage() {
           {/* ✏️ ปุ่มไปหน้าแก้ไข (จะทำภายหลัง) */}
           <button
             onClick={() => router.push("/housekeeper/inventory/edit")}
-            className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer"
+            className="rounded-md border px-3 py-2 text-black text-sm border-black hover:bg-yellow-500 hover:border-yellow-500 cursor-pointer transition"
           >
             แก้ไขรายการทั้งหมด
           </button>
         </div>
       </div>
-
+      
       {/* Search */}
       <div className="flex gap-2">
         <input
@@ -105,18 +129,12 @@ export default function HKInventoryPage() {
           placeholder="ค้นหาชื่อของ"
           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 placeholder:text-gray-400 focus:outline-none focus:border-[--color-primary] focus:ring-1 focus:ring-[--color-primary]"
         />
-        <button
-          onClick={fetchData}
-          className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
-        >
-          {loading ? "กำลังค้นหา..." : "ค้นหา"}
-        </button>
       </div>
 
       {/* ตารางแสดงผลบนหน้า */}
-      <div className="overflow-x-auto rounded-xl border">
+      <div className="overflow-y-auto max-h-[600px] pr-[10px]">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600">
+          <thead className="bg-gray-50 text-gray-600 sticky top-0">
             <tr>
               {/* <th className="text-left px-4 py-2">รหัส</th> */}
               <th className="text-left px-4 py-2">รายการ</th>

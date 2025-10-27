@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-
 const TH = {
   Approved: "อนุมัติแล้ว",
   Waiting: "กำลังดำเนินการ",
@@ -19,33 +18,20 @@ export default function HKPurchaseRequestsPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = async (search = "") => {
     setLoading(true);
 
-    const u = new URL("/api/requests", location.origin);
-    // ใส่พารามิเตอร์กรองได้ตามต้องการ เช่น u.searchParams.set("mine","1")
-
     try {
-      const res = await fetch(u.toString(), { cache: "no-store" });
+      const u = new URL("/api/requests", location.origin);
+      if (search) u.searchParams.set("q", search); // ✅ เพิ่มตัวกรองเมื่อมีการพิมพ์
 
-      const contentType = res.headers.get("content-type") || "";
+      const res = await fetch(u.toString(), { cache: "no-store" });
+      const ct = res.headers.get("content-type") || "";
       const text = await res.text();
 
-      let data = null;
-      if (text) {
-        if (contentType.includes("application/json")) {
-          try {
-            data = JSON.parse(text);
-          } catch {
-            throw new Error("Invalid JSON from server");
-          }
-        } else {
-          // เซิร์ฟเวอร์ส่ง HTML/ข้อความอื่นกลับมา
-          throw new Error(`Unexpected content-type: ${contentType}`);
-        }
-      } else {
-        // บอดีว่าง → ตั้งค่าเริ่มเป็น [] เพื่อไม่ให้ .json() พัง
-        data = [];
+      let data = [];
+      if (text && ct.includes("application/json")) {
+        data = JSON.parse(text);
       }
 
       if (!res.ok) {
@@ -57,27 +43,38 @@ export default function HKPurchaseRequestsPage() {
       setRows(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
-      setRows([]); // fallback
-      setError(err.message); // แสดงใน UI ได้
+      setError(err.message);
+      setRows([]);
     } finally {
       setLoading(false);
     }
   };
 
-
+  // ✅ โหลดข้อมูลครั้งแรก
   useEffect(() => {
     fetchData();
   }, []);
+
+  // ✅ ค้นหาอัตโนมัติเมื่อพิมพ์ (หน่วง 300ms)
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      fetchData(q);
+    }, 300);
+    return () => clearTimeout(delay);
+  }, [q]);
 
   return (
     <div className="p-6 space-y-6">
       <header className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[--color-primary]">
+          <h1 className="text-2xl font-bold text-[var(--color-primary)]">
             รายการคำขอจัดซื้อ
           </h1>
-          <p className="text-sm text-gray-500">สร้างคำขอใหม่และติดตามสถานะ</p>
+          <p className="text-sm text-gray-500">
+            สร้างใบเบิกของ ดูรายละเอียด และคืนของ
+          </p>
         </div>
+
         <Link
           href="/housekeeper/requests/new"
           className="rounded-lg bg-[var(--color-primary)] text-white px-3 py-2 hover:bg-[var(--color-primary-dark)]"
@@ -93,20 +90,15 @@ export default function HKPurchaseRequestsPage() {
           placeholder="ค้นหาเลขที่คำขอ / รายการ"
           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 placeholder:text-gray-400 focus:outline-none focus:border-[--color-primary] focus:ring-1 focus:ring-[--color-primary]"
         />
-        <button
-          onClick={fetchData}
-          className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
-        >
-          ค้นหา
-        </button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border">
+      <div className="overflow-y-auto max-h-[600px] pr-[10px]">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600">
+          <thead className="bg-gray-50 text-gray-600 sticky top-0">
             <tr>
               <th className="text-left px-4 py-2">เลขที่คำขอ</th>
-              <th className="text-left px-4 py-2">วันที่</th>
+              <th className="text-left px-4 py-2">วันที่สร้าง</th>
+              <th className="text-left px-4 py-2">อัพเดตล่าสุด</th>
               <th className="text-left px-4 py-2">สถานะ</th>
               <th className="text-right px-4 py-2">ดำเนินการ</th>
             </tr>
@@ -116,7 +108,22 @@ export default function HKPurchaseRequestsPage() {
               <tr key={r.R_No} className="border-t">
                 <td className="px-4 py-2">{r.R_No}</td>
                 <td className="px-4 py-2">
-                  {new Date(r.R_DateTime).toLocaleString()}
+                  {new Date(r.R_DateTime).toLocaleString("th-TH", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </td>
+                <td className="px-4 py-2">
+                  {new Date(r.R_LastModified).toLocaleString("th-TH", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </td>
                 <td className="px-4 py-2">
                   <span className="inline-flex items-center px-2 py-0.5 rounded bg-gray-100 text-gray-700">
@@ -126,7 +133,7 @@ export default function HKPurchaseRequestsPage() {
                 <td className="px-4 py-2 text-right">
                   <Link
                     href={"/housekeeper/requests/" + r.R_No}
-                    className="text-[--color-primary] hover:underline"
+                    className="text-[var(--color-primary)] hover:underline"
                   >
                     รายละเอียด
                   </Link>

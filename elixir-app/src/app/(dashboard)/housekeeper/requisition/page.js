@@ -10,12 +10,12 @@ export default function HKRequisitionPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = async (searchText = "") => {
     try {
       setLoading(true);
       const u = new URL("/api/withdraws", window.location.origin);
-      if (q) u.searchParams.set("q", q);
-      const res = await fetch(u.toString());
+      if (searchText) u.searchParams.set("q", searchText);
+      const res = await fetch(u.toString(), { cache: "no-store" });
       const ct = res.headers.get("content-type") || "";
       const data = ct.includes("application/json") ? await res.json() : [];
       setRows(Array.isArray(data) ? data : []);
@@ -27,9 +27,18 @@ export default function HKRequisitionPage() {
     }
   };
 
+  // โหลดข้อมูลครั้งแรก
   useEffect(() => {
     fetchData();
   }, []);
+
+  // ✅ ค้นหาอัตโนมัติเมื่อพิมพ์ (หน่วง 300ms เพื่อไม่ให้ยิง API ถี่เกินไป)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchData(q);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [q]);
 
   return (
     <div className="p-6 space-y-6">
@@ -45,7 +54,7 @@ export default function HKRequisitionPage() {
         </div>
         <Link
           href="/housekeeper/requisition/new"
-          className="rounded-lg bg-[var(--color-primary)] text-white px-4 py-2 hover:bg-[var(--color-primary-dark)] text-center"
+          className="rounded-lg bg-[var(--color-primary)] text-white px-4 py-2 hover:bg-[var(--color-primary-dark)] text-center transition"
         >
           + สร้างใบเบิกของ
         </Link>
@@ -59,18 +68,12 @@ export default function HKRequisitionPage() {
           placeholder="ค้นหาเลขที่ใบเบิก / รายการ"
           className="flex-1 min-w-[220px] rounded-md border border-gray-300 bg-white px-3 py-2 placeholder:text-gray-400 focus:outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
         />
-        <button
-          onClick={fetchData}
-          className="rounded-md border px-4 py-2 text-sm hover:bg-gray-50"
-        >
-          ค้นหา
-        </button>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border">
+      <div className="overflow-y-auto max-h-[600px] pr-[10px]">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600">
+          <thead className="bg-gray-50 text-gray-600 sticky top-0">
             <tr>
               <th className="text-left px-4 py-2">เลขที่ใบเบิก</th>
               <th className="text-left px-4 py-2">วันที่เบิก</th>
@@ -82,7 +85,7 @@ export default function HKRequisitionPage() {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.WL_No} className="border-t hover:bg-gray-50">
+              <tr key={r.WL_No} className="border-t">
                 <td className="px-4 py-2">{r.WL_No}</td>
                 <td className="px-4 py-2">
                   {new Date(r.WL_DateTime).toLocaleString("th-TH", {

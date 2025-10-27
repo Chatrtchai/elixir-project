@@ -37,23 +37,24 @@ export default function WithdrawDetailModal() {
         <div>
           <div className="text-gray-600 mb-1 font-medium">รายละเอียด</div>
           <ul className="list-disc list-inside space-y-1">
-            {(data.details || []).map((d) => (
-              <li key={d.WD_Id}>
-                {d.I_Name} — เบิก {d.WD_Amount} ชิ้น
-                {d.WD_Return_Left > 0 && (
-                  <span className="text-gray-500">
-                    {" "}
-                    (คืนแล้ว {d.WD_Return_Left})
-                  </span>
-                )}
-                {d.WD_Return_Left == 0 && (
-                  <span className="text-red-500">
-                    {" "}
-                    (หมด)
-                  </span>
-                )}
-              </li>
-            ))}
+            {(data.details || []).map((d) => {
+              const returnedAll =
+                d.WD_Amount_Left === 0 || d.WD_Return_Left === d.WD_Amount;
+              const returnedSome = d.WD_Return_Left > 0 && !returnedAll;
+
+              return (
+                <li key={d.WD_Id}>
+                  {d.I_Name} — เบิก {d.WD_Amount} ชิ้น
+                  {returnedSome && (
+                    <span className="text-gray-500">
+                      {" "}
+                      (คืนแล้ว {d.WD_Return_Left})
+                    </span>
+                  )}
+                  {returnedAll && <span className="text-red-500"> (หมด)</span>}
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>

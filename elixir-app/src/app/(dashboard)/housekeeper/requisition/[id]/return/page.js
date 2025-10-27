@@ -10,7 +10,7 @@ export default function WithdrawReturnModal() {
   const { id } = useParams();
   const router = useRouter();
   const [data, setData] = useState(null);
-  const [returns, setReturns] = useState([]); // [{detailId, amount, max, item, withdrawn}]
+  const [returns, setReturns] = useState([]); // [{detailId, itemId, amount, max, item, withdrawn}]
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -25,28 +25,27 @@ export default function WithdrawReturnModal() {
         setReturns(
           (json.details || []).map((d) => ({
             detailId: d.WD_Id,
-            amount: "", // ควบคุมค่า (controlled) — เว้นว่าง = 0
+            itemId: d.I_Id, // ✅ ใส่ไว้เพื่อส่งให้ API
+            amount: "", // controlled; ค่าว่างหมายถึง 0
             max: Number(d.WD_Amount_Left ?? 0),
             item: d.I_Name,
             withdrawn: Number(d.WD_Amount ?? 0),
           }))
         );
       } catch {
-        // เงียบไว้เพื่อไม่ flash error ตอนแรก
+        // เงียบไว้เพื่อไม่ flash error
       }
     })();
   }, [id]);
 
-  function testSubmit() {
-    console.log("จำนวนที่คืนของ", returns.amount ?? 0);
-    console.log("จำนวนที่ใส่คืนของ", return_amount.value ?? 0);
-    console.log("ส่งข้อมูล:", {
-      items: returns.map((r) => ({
-        detailId: r.detailId,
-        amount: Number(r.amount === "" ? 0 : r.amount),
-      })),
-    });
-    // submit();
+  // helper: แปลง Response เป็น JSON แบบทน error body ว่าง
+  async function safeJson(res) {
+    const txt = await res.text();
+    try {
+      return txt ? JSON.parse(txt) : {};
+    } catch {
+      return {};
+    }
   }
 
   const submit = async () => {
@@ -67,21 +66,52 @@ export default function WithdrawReturnModal() {
         }
       }
 
-      // ส่งทุกรายการเสมอ: ค่าว่าง -> 0
-      const payload = {
-        items: returns.map((r) => ({
-          detailId: r.detailId,
+      // สร้าง payload: ส่งเฉพาะรายการที่คืนจริง (>0)
+      const items = returns
+        .map((r) => ({
+          itemId: Number(r.itemId),
+          detailId:
+            r.detailId != null && Number.isFinite(Number(r.detailId))
+              ? Number(r.detailId)
+              : undefined,
           amount: Number(r.amount === "" ? 0 : r.amount),
-        })),
-      };
+        }))
+        .filter((x) => x.amount > 0);
 
-      const res = await fetch(`/api/withdraws/${id}/return`, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const js = await res.json();
-      if (!res.ok) throw new Error(js.error || "ไม่สามารถคืนของได้");
+      if (items.length === 0) {
+        throw new Error("กรุณาระบุจำนวนที่คืนอย่างน้อย 1 รายการ");
+      }
+
+      // 1) PATCH — อัปเดตสต็อก/ดีเทล/สถานะใบเบิก
+      {
+        const res = await fetch(`/api/withdraws/${id}/return`, {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ items }),
+        });
+        const js = await safeJson(res);
+        if (!res.ok) {
+          throw new Error(js.error || `คืนของไม่สำเร็จ (PATCH ${res.status})`);
+        }
+      }
+
+      // 2) POST — บันทึกประวัติธุรกรรม (ไม่ทำให้ล้ม workflow ถ้า fail)
+      {
+        const res = await fetch(`/api/withdraws/${id}/return`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            items /*, note: "ข้อความเพิ่มเติม (ออปชัน)"*/,
+          }),
+        });
+        const js = await safeJson(res);
+        if (!res.ok) {
+          console.warn("POST transaction failed:", js);
+          alert(
+            "อัปเดตสต็อกสำเร็จแล้ว แต่บันทึกประวัติธุรกรรมไม่สำเร็จ (POST)"
+          );
+        }
+      }
 
       router.back();
       router.refresh();
@@ -134,7 +164,7 @@ export default function WithdrawReturnModal() {
                       {withdrawn}
                     </td>
                     <td className="px-3 py-2 text-center align-top">
-                      <div className="flex items-center justify-center gap-2" id="return_amount">
+                      <div className="flex items-center justify-center gap-2">
                         <input
                           type="number"
                           min="0"
@@ -145,6 +175,7 @@ export default function WithdrawReturnModal() {
                             const cp = [...returns];
                             cp[idx] = cp[idx] || {
                               detailId: d.WD_Id,
+                              itemId: d.I_Id,
                               amount: "",
                               max,
                               item: d.I_Name,

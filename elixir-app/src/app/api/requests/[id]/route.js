@@ -32,6 +32,7 @@ export async function GET(_req, { params }) {
         r.HK_Username,
         r.H_Username,
         r.PD_Username,
+        r.R_LastModified,
         hk.Fullname AS HK_Fullname,
         h.Fullname  AS H_Fullname,
         pd.Fullname AS PD_Fullname
@@ -72,7 +73,7 @@ export async function GET(_req, { params }) {
 }
 
 // PATCH /api/requests/:id
-// body: { action: "startPurchasing" | "markReceived" | "markCompleted" }
+// body: { action: "approve" | "reject" | "startPurchasing" | "markReceived" | "markCompleted", pdDept? }
 export async function PATCH(req, { params }) {
   const session = await readSession(req).catch(() => null);
   if (!session?.sub) {
@@ -86,13 +87,17 @@ export async function PATCH(req, { params }) {
 
   const body = await req.json().catch(() => ({}));
   const action = String(body.action || "").toLowerCase();
+  const pdDept = body.pdDept ? String(body.pdDept) : "";
 
   // สิทธิ์:
-  // - startPurchasing / markReceived: เฉพาะ PURCHASING
-  // - markCompleted: อนุญาต HOUSEKEEPER และ PURCHASING
   const isPUR = role.includes("PURCHASING");
   const isHK = role.includes("HOUSEKEEPER");
+  const isHEAD = role.includes("HEAD");
 
+  // ตรวจสิทธิ์ตาม action
+  if ((action === "approve" || action === "reject") && !isHEAD) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
   if ((action === "startpurchasing" || action === "markreceived") && !isPUR) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
@@ -117,7 +122,49 @@ export async function PATCH(req, { params }) {
     let nextStatus = null;
     let note = "";
 
-    if (action === "startpurchasing") {
+    if (action === "approve") {
+      if (cur.R_Status !== "Waiting") {
+        await conn.rollback();
+        await conn.end();
+        return NextResponse.json(
+          { error: `invalid transition ${cur.R_Status} -> Approved` },
+          { status: 409 }
+        );
+      }
+      if (!pdDept) {
+        await conn.rollback();
+        await conn.end();
+        return NextResponse.json(
+          { error: "pdDept (Purchasing Username) is required" },
+          { status: 400 }
+        );
+      }
+      nextStatus = "Approved";
+      note = `หัวหน้าอนุมัติคำขอและมอบหมายให้ ${pdDept} (ฝ่ายจัดซื้อ)`;
+      await conn.execute(
+        `UPDATE Request 
+           SET R_Status=?, H_Username=?, PD_Username=?, R_LastModified=NOW()
+         WHERE R_No=?`,
+        [nextStatus, session.sub, pdDept, id]
+      );
+    } else if (action === "reject") {
+      if (cur.R_Status !== "Waiting") {
+        await conn.rollback();
+        await conn.end();
+        return NextResponse.json(
+          { error: `invalid transition ${cur.R_Status} -> Rejected` },
+          { status: 409 }
+        );
+      }
+      nextStatus = "Rejected";
+      note = "หัวหน้าปฏิเสธคำขอ";
+      await conn.execute(
+        `UPDATE Request 
+           SET R_Status=?, H_Username=?, R_LastModified=NOW()
+         WHERE R_No=?`,
+        [nextStatus, session.sub, id]
+      );
+    } else if (action === "startpurchasing") {
       if (cur.R_Status !== "Approved" && cur.R_Status !== "Accepted") {
         await conn.rollback();
         await conn.end();
@@ -128,8 +175,6 @@ export async function PATCH(req, { params }) {
       }
       nextStatus = "Purchasing";
       note = "ฝ่ายจัดซื้อเริ่มดำเนินการจัดซื้อ";
-
-      // อัปเดตสถานะ + ผูก PD_Username ให้ผู้กด (PURCHASING)
       await conn.execute(
         `UPDATE Request SET R_Status=?, PD_Username=?, R_LastModified=NOW() WHERE R_No=?`,
         [nextStatus, session.sub, id]
@@ -145,7 +190,6 @@ export async function PATCH(req, { params }) {
       }
       nextStatus = "Received";
       note = "ฝ่ายจัดซื้อยืนยันได้รับของแล้ว";
-
       await conn.execute(
         `UPDATE Request SET R_Status=?, PD_Username=COALESCE(PD_Username, ?), R_LastModified=NOW() WHERE R_No=?`,
         [nextStatus, session.sub, id]
@@ -164,13 +208,12 @@ export async function PATCH(req, { params }) {
         ? "แม่บ้านยืนยันเสร็จสิ้น รับของเข้าคลังแล้ว"
         : "ฝ่ายจัดซื้อยืนยันเสร็จสิ้น รับของเข้าคลังแล้ว";
 
-      // อัปเดตสถานะ (ไม่แก้ PD_Username ที่บันทึกไว้ก่อนหน้า)
       await conn.execute(
         `UPDATE Request SET R_Status=?, R_LastModified=NOW() WHERE R_No=?`,
         [nextStatus, id]
       );
 
-      // อัปเดตสต็อกเมื่อเสร็จสิ้น (ย้ายจาก Received มาไว้ที่นี่)
+      // อัปเดตสต็อกเมื่อเสร็จสิ้น
       const [details] = await conn.execute(
         `SELECT I_Id, RD_Amount FROM Request_Detail WHERE R_No=?`,
         [id]

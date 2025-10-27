@@ -18,6 +18,7 @@ export async function GET() {
         r.HK_Username,
         r.H_Username,
         r.PD_Username,
+        r.R_LastModified,
         h.Fullname  AS HeadName,
         hk.Fullname AS HKName,
         pd.Fullname AS PDName

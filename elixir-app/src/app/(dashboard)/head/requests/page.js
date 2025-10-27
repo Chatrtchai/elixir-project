@@ -133,9 +133,9 @@ export default function HeadRequestsPage() {
           </div>
 
           {/* ตาราง */}
-          <div className="overflow-x-auto rounded-xl border">
+          <div className="overflow-y-auto max-h-[600px] pr-[10px]">
             <table className="min-w-full text-base">
-              <thead className="bg-gray-50 text-gray-600">
+              <thead className="bg-gray-50 text-gray-600 sticky top-0">
                 <tr className="border-b">
                   <th className="px-4 py-3 text-left">รายการที่</th>
                   <th className="px-4 py-3 text-left">วันที่สร้าง</th>
@@ -151,7 +151,7 @@ export default function HeadRequestsPage() {
                     className: "text-gray-600",
                   };
                   return (
-                    <tr key={r.R_No} className="border-t hover:bg-gray-50">
+                    <tr key={r.R_No} className="border-t">
                       <td className="px-4 py-3">{r.R_No}</td>
                       <td className="px-4 py-3">
                         {r.R_DateTime

@@ -93,6 +93,9 @@ export default function HeadRequestDetailAction() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "approve", pdDept }), // Username ของผู้จัดซื้อ
       });
+
+      console.log("res", res);
+
       if (!res.ok) throw new Error(await res.text());
       alert("อนุมัติคำขอสำเร็จ");
       router.back(); // ปิดโมดัล/ย้อนกลับ
@@ -136,6 +139,20 @@ export default function HeadRequestDetailAction() {
           value={
             data.R_DateTime
               ? new Date(data.R_DateTime).toLocaleString("th-TH", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "-"
+          }
+        />
+        <ItemRow
+          label="วันที่อัพเดตล่าสุด"
+          value={
+            data.R_LastModified
+              ? new Date(data.R_LastModified).toLocaleString("th-TH", {
                   day: "2-digit",
                   month: "2-digit",
                   year: "numeric",
@@ -202,14 +219,14 @@ export default function HeadRequestDetailAction() {
               <button
                 onClick={cancelApprove}
                 className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
-                disabled={submitting}
+                disabled={submitting || data.R_Status !== "Waiting"}
               >
                 ยกเลิก
               </button>
               <button
                 onClick={confirmApprove}
                 className="rounded-md bg-[var(--color-primary)] text-white px-3 py-2 hover:bg-[var(--color-primary-dark)] disabled:opacity-50"
-                disabled={submitting}
+                disabled={submitting || data.R_Status !== "Waiting"}
               >
                 {submitting ? "กำลังยืนยัน..." : "ยืนยัน"}
               </button>
@@ -229,20 +246,25 @@ export default function HeadRequestDetailAction() {
         </button>
 
         <div className="flex justify-end gap-2">
-          <button
-            onClick={clickReject}
-            className="rounded-md border px-3 py-2 text-sm text-white bg-red-500 hover:bg-red-600 cursor-pointer"
-            disabled={submitting}
-          >
-            {submitting ? "กำลังปฏิเสธ..." : "ปฏิเสธ"}
-          </button>
-          <button
-            onClick={openApprove}
-            className="rounded-md bg-[var(--color-primary)] text-white px-3 py-2 hover:bg-[var(--color-primary-dark)] cursor-pointer"
-            disabled={submitting}
-          >
-            อนุมัติ
-          </button>
+          {/* ปุ่มอนุมัติ */}
+          {!submitting && data?.R_Status === "Waiting" && (
+            <button
+              onClick={openApprove}
+              className="rounded-md bg-[var(--color-primary)] text-white px-3 py-2 hover:bg-[var(--color-primary-dark)] cursor-pointer"
+            >
+              อนุมัติ
+            </button>
+          )}
+
+          {/* ปุ่มปฏิเสธ */}
+          {!submitting && data?.R_Status === "Waiting" && (
+            <button
+              onClick={clickReject}
+              className="rounded-md border px-3 py-2 text-sm text-white bg-red-500 hover:bg-red-600 cursor-pointer"
+            >
+              ปฏิเสธ
+            </button>
+          )}
         </div>
       </div>
     </ModalWrapper>

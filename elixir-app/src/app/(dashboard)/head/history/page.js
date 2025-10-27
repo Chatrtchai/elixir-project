@@ -1,3 +1,5 @@
+// src\app\(dashboard)\head\history\page.js
+
 export default function HeadHistoryPage() {
   return (
     <div className="p-6 space-y-4">
@@ -5,11 +7,10 @@ export default function HeadHistoryPage() {
         ประวัติการทำรายการ
       </h1>
       <p className="text-gray-500 text-sm">
-        หน้านี้จะแสดงการอนุมัติ/ปฏิเสธของหัวหน้า และการเปลี่ยนสถานะของคำขอ (ต่อ
-        API ได้ภายหลัง)
+        
       </p>
       <div className="rounded-xl border p-6 text-sm text-gray-500">
-        (WIP) — เตรียมเชื่อมต่อกับตาราง RequestTransaction / AuditLog
+        
       </div>
     </div>
   );

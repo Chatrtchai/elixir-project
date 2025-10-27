@@ -37,7 +37,7 @@ export async function POST(req) {
       ok = await bcrypt.compare(password, stored);
     } else {
       // first-login migration: เปรียบเทียบ plaintext ครั้งแรก
-      ok = password === stored;
+      ok = (password === stored);
       if (ok) {
         const newHash = await bcrypt.hash(password, 10);
         await conn.execute(

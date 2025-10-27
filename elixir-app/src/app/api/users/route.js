@@ -1,6 +1,7 @@
 // src/app/api/users/route.js
 import { NextResponse } from "next/server";
 import { createConnection } from "@/lib/db";
+import { readSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -28,7 +29,7 @@ export async function GET(req) {
     const where = wh.length ? `WHERE ${wh.join(" AND ")}` : "";
     const [rows] = await conn.execute(
       `
-      SELECT Username, Fullname
+      SELECT Username, Fullname, Role, Is_Login
       FROM user
       ${where}
       ORDER BY Fullname ASC
@@ -44,5 +45,77 @@ export async function GET(req) {
       await conn.end();
     } catch {}
     return NextResponse.json({ error: "server error" }, { status: 500 });
+  }
+}
+
+// สร้างผู้ใช้ใหม่: { username, password, fullName, role }
+export async function POST(req) {
+  // อนุญาตเฉพาะ ADMIN
+  const session = await readSession(req).catch(() => null);
+  if (!session?.role || String(session.role).toUpperCase() !== "ADMIN") {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+
+  let body;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "invalid json" }, { status: 400 });
+  }
+
+  const username = String(body?.username || "").trim();
+  const password = String(body?.password || "");
+  const fullName = String(body?.fullName || "").trim();
+  const role = String(body?.role || "").trim();
+
+  const ALLOWED_ROLES = new Set([
+    "ADMIN",
+    "HEAD",
+    "HOUSEKEEPER",
+    "PURCHASING DEPARTMENT",
+  ]);
+
+  if (!username || !password || !fullName || !role) {
+    return NextResponse.json(
+      { error: "กรอกข้อมูลให้ครบ (username, password, fullName, role)" },
+      { status: 400 }
+    );
+  }
+  if (!ALLOWED_ROLES.has(role)) {
+    return NextResponse.json(
+      { error: `บทบาทไม่ถูกต้อง: ${role}` },
+      { status: 400 }
+    );
+  }
+
+  const conn = await createConnection();
+  try {
+    // ตรวจซ้ำ
+    const [[dup]] = await conn.execute(
+      `SELECT 1 FROM User WHERE Username = ? LIMIT 1`,
+      [username]
+    );
+    if (dup) {
+      return NextResponse.json(
+        { error: "มีชื่อผู้ใช้นี้อยู่แล้ว" },
+        { status: 409 }
+      );
+    }
+
+    // ✅ บันทึก password แบบ plaintext
+    await conn.execute(
+      `
+      INSERT INTO User (Username, Password, Fullname, Role, Is_Login)
+      VALUES (?, ?, ?, ?, 0)
+      `,
+      [username, password, fullName, role]
+    );
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error("POST /api/users error:", e);
+    return NextResponse.json({ error: "insert failed" }, { status: 500 });
+  } finally {
+    await conn.end();
   }
 }

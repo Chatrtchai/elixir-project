@@ -69,6 +69,7 @@ export default function UserEditModal() {
       // ✅ ถ้า username เปลี่ยน ให้กลับไปหน้า list ใหม่
       if (form.username !== currentUsername) {
         router.push(`/admin/users/${form.username}/edit`);
+        router.back();
       } else {
         router.back();
       }

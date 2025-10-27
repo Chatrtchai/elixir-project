@@ -1,3 +1,5 @@
+// src\app\(dashboard)\admin\users\new\page.js
+
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";

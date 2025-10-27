@@ -1,36 +1,87 @@
+// src/app/(dashboard)/admin/users/page.js
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 
 export default function AdminUsersPage() {
   const [q, setQ] = useState("");
   const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [me, setMe] = useState(null);
 
-  const fetchUsers = async () => {
-    const res = await fetch(
-      "/api/users" + (q ? `?q=${encodeURIComponent(q)}` : "")
-    );
-    if (!res.ok) return; // จะเพิ่ม toast/error ก็ได้
-    const data = await res.json();
-    setRows(data);
+  const abortRef = useRef(null);
+
+  // ✅ ดึง session ของผู้ใช้ปัจจุบัน
+  const getCurrentUser = async () => {
+    try {
+      const res = await fetch("/api/auth/session", { cache: "no-store" });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data?.user || null;
+    } catch {
+      return null;
+    }
   };
 
+  // ✅ โหลดข้อมูลผู้ใช้ทั้งหมด ยกเว้นตัวเอง
+  const fetchUsers = async (keyword = "") => {
+    try {
+      if (abortRef.current) abortRef.current.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      setLoading(true);
+      const res = await fetch(
+        "/api/users" + (keyword ? `?q=${encodeURIComponent(keyword)}` : ""),
+        { signal: controller.signal, cache: "no-store" }
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+
+      // กรองไม่ให้แสดง user ของตัวเอง
+      const filtered = me
+        ? data.filter((u) => u.Username !== me.username)
+        : data;
+
+      setRows(filtered);
+    } catch (err) {
+      if (err.name !== "AbortError") console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // โหลด session ปัจจุบัน
   useEffect(() => {
-    fetchUsers();
+    getCurrentUser().then((user) => setMe(user));
   }, []);
+
+  // โหลดผู้ใช้ทั้งหมดหลังรู้ว่าเราเป็นใคร
+  useEffect(() => {
+    if (me) fetchUsers();
+  }, [me]);
+
+  // ค้นหาอัตโนมัติขณะพิมพ์ (debounce 300ms)
+  useEffect(() => {
+    if (!me) return;
+    const t = setTimeout(() => {
+      fetchUsers(q.trim());
+    }, 300);
+    return () => clearTimeout(t);
+  }, [q, me]);
 
   return (
     <div className="p-6 space-y-6">
       <header className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[color-primary]">
+          <h1 className="text-2xl text-[color-primary]">
             จัดการบัญชีผู้ใช้งาน
           </h1>
         </div>
         <Link
           href="/admin/users/new"
-          className="flex items-center gap-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white px-3 py-2 text-sm font-semibold"
+          className="flex items-center gap-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white px-3 py-2 text-sm"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -45,6 +96,7 @@ export default function AdminUsersPage() {
         </Link>
       </header>
 
+      {/* 🔍 ช่องค้นหา */}
       <div className="flex gap-2">
         <input
           value={q}
@@ -52,17 +104,12 @@ export default function AdminUsersPage() {
           placeholder="ค้นหาจากชื่อผู้ใช้ / ชื่อจริง"
           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 placeholder:text-gray-400 focus:outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
         />
-        <button
-          onClick={fetchUsers}
-          className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
-        >
-          ค้นหา
-        </button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border">
+      {/* 🧾 ตารางผู้ใช้ */}
+      <div className="overflow-y-auto max-h-[600px] pr-[10px]">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600">
+          <thead className="bg-gray-50 text-gray-600 sticky top-0">
             <tr>
               <th className="text-left px-4 py-2">ชื่อผู้ใช้</th>
               <th className="text-left px-4 py-2">ชื่อ-สกุล</th>
@@ -88,7 +135,7 @@ export default function AdminUsersPage() {
                     : ""}
                 </td>
                 <td className="px-4 py-2">
-                  {r.Is_Login ? "ใข้งานอยู่" : "ไม่ได้ใช้งาน"}
+                  {r.Is_Login ? "ใช้งานอยู่" : "ไม่ได้ใช้งาน"}
                 </td>
                 <td className="px-4 py-2 text-center space-x-2">
                   <Link
@@ -109,7 +156,7 @@ export default function AdminUsersPage() {
             {!rows.length && (
               <tr>
                 <td className="px-4 py-6 text-center text-gray-500" colSpan={5}>
-                  ไม่พบข้อมูล
+                  {loading ? "กำลังค้นหา..." : "ไม่พบข้อมูล"}
                 </td>
               </tr>
             )}

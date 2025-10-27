@@ -58,11 +58,6 @@ export default function DashboardLayout({ children }) {
           href: "/admin/users", 
           label: "จัดการบัญชีผู้ใช้งาน",
           icon: "group" },
-        {
-          href: "/admin/history",
-          label: "ประวัติการทำรายการ",
-          icon: "history",
-        },
       ],
       HEAD: [
         {

@@ -42,6 +42,7 @@ function sanitizeNote(s) {
 export async function PUT(req) {
   // อ่าน session จากคุกกี้ของคำขอนี้
   const session = await readSession(req); // { sub, name, role } | null
+  console.log("Session:", session);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -111,8 +112,8 @@ export async function PUT(req) {
     // 2) บันทึกหัวธุรกรรม (ใช้ backticks กันคำสงวน)
     // ปรับชื่อคอลัมน์ให้ตรง schema จริงของคุณถ้าต่าง
     const [txRes] = await conn.execute(
-      "INSERT INTO `transaction` (T_Time, T_Note, HK_Username) VALUES (NOW(), ?, ?)",
-      [note, session.name || "UNKNOWN"]
+      "INSERT INTO `transaction` (T_DateTime, T_Note, HK_Username) VALUES (NOW(), ?, ?)",
+      [note, session.sub]
     );
     const T_No = txRes.insertId;
 

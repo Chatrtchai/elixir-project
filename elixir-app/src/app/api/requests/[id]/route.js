@@ -139,8 +139,17 @@ export async function PATCH(req, { params }) {
           { status: 400 }
         );
       }
+
+      // ✅ ดึงชื่อจริงของผู้ใช้จาก User
+      const [[pdUser]] = await conn.execute(
+        `SELECT Fullname FROM User WHERE Username = ?`,
+        [pdDept]
+      );
+      const pdFullname = pdUser ? pdUser.Fullname : pdDept;
+
       nextStatus = "Approved";
-      note = `หัวหน้าอนุมัติคำขอและมอบหมายให้ ${pdDept} (ฝ่ายจัดซื้อ)`;
+      note = `หัวหน้าอนุมัติคำขอและมอบหมายให้ ${pdFullname} (ฝ่ายจัดซื้อ)`;
+
       await conn.execute(
         `UPDATE Request 
            SET R_Status=?, H_Username=?, PD_Username=?, R_LastModified=NOW()

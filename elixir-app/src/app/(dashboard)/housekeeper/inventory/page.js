@@ -102,6 +102,22 @@ export default function HKInventoryPage() {
           รายการของทั้งหมด
         </h1>
         <div className="flex gap-2">
+          {/* ➕ ปุ่มเพิ่มของ */}
+          <button
+            onClick={() => router.push("/housekeeper/inventory/add")}
+            className="rounded-md border px-3 py-2 text-white text-sm bg-green-600 hover:bg-green-700 cursor-pointer transition"
+          >
+            เพิ่มของ
+          </button>
+
+          {/* ✏️ ปุ่มไปหน้าแก้ไข (จะทำภายหลัง) */}
+          <button
+            onClick={() => router.push("/housekeeper/inventory/edit")}
+            className="rounded-md px-3 py-2 text-black text-sm bg-yellow-500 hover:bg-yellow-600 cursor-pointer transition"
+          >
+            แก้ไขรายการทั้งหมด
+          </button>
+
           {/* 🖨️ พิมพ์ทั้งหมด */}
           <button
             onClick={printAll}
@@ -110,17 +126,9 @@ export default function HKInventoryPage() {
           >
             {printing ? "กำลังเตรียมพิมพ์..." : "พิมพ์รายการทั้งหมด"}
           </button>
-
-          {/* ✏️ ปุ่มไปหน้าแก้ไข (จะทำภายหลัง) */}
-          <button
-            onClick={() => router.push("/housekeeper/inventory/edit")}
-            className="rounded-md border px-3 py-2 text-black text-sm border-black hover:bg-yellow-500 hover:border-yellow-500 cursor-pointer transition"
-          >
-            แก้ไขรายการทั้งหมด
-          </button>
         </div>
       </div>
-      
+
       {/* Search */}
       <div className="flex gap-2">
         <input

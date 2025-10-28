@@ -1,6 +1,7 @@
 // src/app/api/items/route.js
 import { NextResponse } from "next/server";
 import { createConnection } from "@/lib/db";
+import { readSession } from "@/lib/auth";
 
 // GET /api/items?q=น้ำยา
 export async function GET(req) {
@@ -33,6 +34,10 @@ export async function GET(req) {
 
 // POST /api/items
 export async function POST(req) {
+  const session = await readSession(req).catch(() => null);
+  if (!session || session.role !== "HOUSEKEEPER") {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
   const { I_Name, I_Quantity } = await req.json();
   if (!I_Name || I_Quantity === undefined)
     return NextResponse.json({ error: "กรอกข้อมูลไม่ครบ" }, { status: 400 });
@@ -51,8 +56,8 @@ export async function POST(req) {
 
     // 3️⃣ สร้าง Transaction ใหม่
     const [txRes] = await conn.execute(
-      "INSERT INTO TRANSACTION (T_Time, T_Note, HK_Username) VALUES (NOW(), ?, ?)",
-      ["เพิ่มของใหม่เข้าคลัง", "HOUSEKEEPER"]
+      "INSERT INTO TRANSACTION (T_DateTime, T_Note, HK_Username) VALUES (NOW(), ?, ?)",
+      ["เพิ่ม" + I_Name + "จำนวน" + I_Quantity + "ชิ้น เข้าคลัง", session.sub]
     );
     const T_No = txRes.insertId;
 

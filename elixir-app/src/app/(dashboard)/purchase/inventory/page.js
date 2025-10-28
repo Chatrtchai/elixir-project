@@ -18,7 +18,7 @@ export default function PurchaseInventoryPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-[--color-primary]">
+      <h1 className="text-2xl font-bold text-[var(--color-primary)]">
         รายการของทั้งหมด
       </h1>
       <div className="flex gap-2">
@@ -36,7 +36,7 @@ export default function PurchaseInventoryPage() {
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border">
+      <div className="overflow-y-auto max-h-[600px] pr-[10px]">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-gray-600">
             <tr>

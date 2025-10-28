@@ -30,3 +30,44 @@ export async function GET(req) {
     await conn.end();
   }
 }
+
+// POST /api/items
+export async function POST(req) {
+  const { I_Name, I_Quantity } = await req.json();
+  if (!I_Name || I_Quantity === undefined)
+    return NextResponse.json({ error: "กรอกข้อมูลไม่ครบ" }, { status: 400 });
+
+  const conn = await createConnection();
+  try {
+    // 1️⃣ หา ID ล่าสุด +1
+    const [[last]] = await conn.query("SELECT MAX(I_Id) AS lastId FROM ITEM");
+    const newId = Number(last?.lastId || 0) + 1;
+
+    // 2️⃣ เพิ่มลงตาราง ITEM
+    const [itemRes] = await conn.execute(
+      "INSERT INTO ITEM (I_Id, I_Name, I_Quantity) VALUES (?, ?, ?)",
+      [newId, I_Name, I_Quantity]
+    );
+
+    // 3️⃣ สร้าง Transaction ใหม่
+    const [txRes] = await conn.execute(
+      "INSERT INTO TRANSACTION (T_Time, T_Note, HK_Username) VALUES (NOW(), ?, ?)",
+      ["เพิ่มของใหม่เข้าคลัง", "HOUSEKEEPER"]
+    );
+    const T_No = txRes.insertId;
+
+    // 4️⃣ บันทึกรายการย่อย
+    await conn.execute(
+      "INSERT INTO TRANSACTION_DETAIL (TD_Amount_Changed, TD_Total_Left, T_No, I_Id) VALUES (?, ?, ?, ?)",
+      [I_Quantity, I_Quantity, T_No, newId]
+    );
+
+    return NextResponse.json({ success: true, I_Id: newId });
+  } catch (e) {
+    console.error("POST /api/items error:", e);
+    return NextResponse.json({ error: "server error" }, { status: 500 });
+  } finally {
+    await conn.end();
+  }
+}
+

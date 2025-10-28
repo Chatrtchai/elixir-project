@@ -54,10 +54,16 @@ export default function DashboardLayout({ children }) {
   const sideMenu = useMemo(() => {
     const map = {
       ADMIN: [
-        { 
-          href: "/admin/users", 
+        {
+          href: "/admin/users",
           label: "จัดการบัญชีผู้ใช้งาน",
-          icon: "group" },
+          icon: "group",
+        },
+        {
+          href: "/admin/history",
+          label: "ประวัติการทำรายการ",
+          icon: "history",
+        },
       ],
       HEAD: [
         {
@@ -70,10 +76,7 @@ export default function DashboardLayout({ children }) {
           label: "รายการของทั้งหมด",
           icon: "inventory_2",
         },
-        { href: "/head/history", 
-          label: "ประวัติการทำรายการ", 
-          icon: "history" 
-        },
+        { href: "/head/history", label: "ประวัติการทำรายการ", icon: "history" },
       ],
       HOUSEKEEPER: [
         {

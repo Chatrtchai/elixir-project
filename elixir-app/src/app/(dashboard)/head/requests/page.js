@@ -156,22 +156,24 @@ export default function HeadRequestsPage() {
                       <td className="px-4 py-3">
                         {r.R_DateTime
                           ? new Date(r.R_DateTime).toLocaleString("th-TH", {
-                              hour: "2-digit",
+                              second: "2-digit",
                               minute: "2-digit",
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "2-digit",
+                              hour: "2-digit",
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
                             })
                           : "-"}
                       </td>
                       <td className="px-4 py-3">
                         {r.R_LastModified
                           ? new Date(r.R_LastModified).toLocaleString("th-TH", {
-                              hour: "2-digit",
+                              second: "2-digit",
                               minute: "2-digit",
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "2-digit",
+                              hour: "2-digit",
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
                             })
                           : "-"}
                       </td>

@@ -127,7 +127,7 @@ export default function HeadRequestDetailAction() {
   };
 
   return (
-    <ModalWrapper title={`รายละเอียดคำขอ #${id}`}>
+    <ModalWrapper title={`รายละเอียดคำขอ #${id}`} width={"w-[600px]"}>
       <div className="space-y-3 text-sm">
         <ItemRow
           label="ผู้ขอ"
@@ -139,11 +139,12 @@ export default function HeadRequestDetailAction() {
           value={
             data.R_DateTime
               ? new Date(data.R_DateTime).toLocaleString("th-TH", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
+                  second: "2-digit",
                   minute: "2-digit",
+                  hour: "2-digit",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
                 })
               : "-"
           }
@@ -153,21 +154,24 @@ export default function HeadRequestDetailAction() {
           value={
             data.R_LastModified
               ? new Date(data.R_LastModified).toLocaleString("th-TH", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
+                  second: "2-digit",
                   minute: "2-digit",
+                  hour: "2-digit",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
                 })
               : "-"
           }
         />
-        {data.PD_Username && (
-          <ItemRow
-            label="ผู้จัดซื้อที่ได้รับมอบหมาย"
-            value={data.PD_Fullname || data.PD_Username}
-          />
-        )}
+        <ItemRow
+          label="หัวหน้า"
+          value={data.H_Fullname || data.H_Username || "-"}
+        />
+        <ItemRow
+          label="ผู้จัดซื้อ"
+          value={data.PD_Fullname || data.PD_Username || "-"}
+        />
 
         <div>
           <div className="text-gray-500 mb-1">รายการที่ขอ</div>
@@ -247,7 +251,7 @@ export default function HeadRequestDetailAction() {
 
         <div className="flex justify-end gap-2">
           {/* ปุ่มอนุมัติ */}
-          {!submitting && data?.R_Status === "Waiting" && (
+          {!submitting && data?.R_Status === "Waiting" && !approveOpen && (
             <button
               onClick={openApprove}
               className="rounded-md bg-[var(--color-primary)] text-white px-3 py-2 hover:bg-[var(--color-primary-dark)] cursor-pointer"
@@ -257,7 +261,7 @@ export default function HeadRequestDetailAction() {
           )}
 
           {/* ปุ่มปฏิเสธ */}
-          {!submitting && data?.R_Status === "Waiting" && (
+          {!submitting && data?.R_Status === "Waiting" && !approveOpen && (
             <button
               onClick={clickReject}
               className="rounded-md border px-3 py-2 text-sm text-white bg-red-500 hover:bg-red-600 cursor-pointer"

@@ -1,4 +1,5 @@
 // src/app/api/auth/session/route.js
+
 import { NextResponse } from "next/server";
 import { createConnection } from "@/lib/db";
 import { readSession } from "@/lib/auth";

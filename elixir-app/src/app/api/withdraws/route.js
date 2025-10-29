@@ -135,35 +135,34 @@ export async function POST(req) {
         "SELECT I_Quantity FROM item WHERE I_Id = ? FOR UPDATE",
         [itemId]
       );
+
       if (!lockRows.length) throw new Error(`item_not_found:${itemId}`);
+
       const qty = Number(lockRows[0].I_Quantity);
+      
+      // qty: จำนวนที่มีอยู่, amount: จำนวนที่เบิก
       if (qty < amount)
         throw new Error(
           `insufficient_stock:item=${itemId},have=${qty},need=${amount}`
         );
-
-      await conn.execute(
-        "UPDATE item SET I_Quantity = I_Quantity - ? WHERE I_Id = ?",
-        [amount, itemId]
-      );
 
       // WITHDRAW_DETAIL(WD_Id, WD_Amount_Left, WD_Amount, WD_Return_Left, WD_After_Return_Amount, I_Id, WL_No)
       await conn.execute(
         `INSERT INTO withdraw_detail
            (WD_Amount_Left, WD_Amount, WD_Return_Left, WD_After_Return_Amount, I_Id, WL_No)
          VALUES (?, ?, 0, 0, ?, ?)`,
-        [amount, amount, itemId, WL_No]
+        [qty - amount, amount, itemId, WL_No]
       );
+
     }
 
     // 3) TRANSACTION (หัว)
-    const baseNote = "เบิกของ";
-    const fullNote = extraNote ? `${baseNote} - ${extraNote}` : baseNote;
 
     const [trxHead] = await conn.execute(
       "INSERT INTO `transaction` (`T_DateTime`, `T_Note`, `HK_Username`) VALUES (NOW(), ?, ?)",
-      [fullNote, session.sub]
+      ["เบิกของ", session.sub]
     );
+
     const T_No = trxHead.insertId;
 
     // 4) TRANSACTION_DETAIL (หลังเบิก: ยอดคงเหลือจริง)
@@ -175,14 +174,21 @@ export async function POST(req) {
         "SELECT I_Quantity FROM item WHERE I_Id = ?",
         [itemId]
       );
+      
       const afterLeft = Number(after.I_Quantity);
 
       await conn.execute(
         `INSERT INTO transaction_detail
            (TD_Total_Left, TD_Amount_Changed, T_No, I_Id)
          VALUES (?, ?, ?, ?)`,
-        [afterLeft, amount, T_No, itemId]
+        [afterLeft - amount, amount, T_No, itemId]
       );
+
+      await conn.execute(
+        "UPDATE item SET I_Quantity = I_Quantity - ? WHERE I_Id = ?",
+        [amount, itemId]
+      );
+
     }
 
     await conn.commit();

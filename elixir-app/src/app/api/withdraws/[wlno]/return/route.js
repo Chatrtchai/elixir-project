@@ -3,61 +3,76 @@ import { NextResponse } from "next/server";
 import { createConnection } from "@/lib/db";
 import { readSession } from "@/lib/auth";
 
-/**
- * รูปแบบ payload (ใช้ได้ทั้ง PATCH/POST)
- * {
- *   "items": [{ "itemId": 1, "amount": 2 }, ...],
- *   "note": "ข้อความเพิ่มเติม (ออปชัน)"
- * }
- *
- * หมายเหตุ:
- * - ถ้ามีแต่ detailId ก็ได้ แต่ควรส่ง itemId มาด้วยจะตรงกว่า:
- *   { detailId, itemId, amount }
- */
-
 // ---------- Utilities ----------
 function parseItems(bodyItems = []) {
+
   const items = Array.isArray(bodyItems) ? bodyItems : [];
+
   const out = [];
+
   for (const it of items) {
+
     const itemId = Number(it?.itemId);
     const amount = Number(it?.amount);
-    const detailId = it?.detailId != null ? Number(it.detailId) : null;
+
+    const detailId = 
+      it?.detailId != null ? 
+      Number(it.detailId) : null;
+
     if (!Number.isInteger(itemId) || itemId <= 0) {
       throw new Error("invalid_item_id");
     }
+
     if (!Number.isInteger(amount) || amount <= 0) {
       // คืนอย่างน้อย 1 ชิ้น
       throw new Error("invalid_amount");
     }
+
     out.push({ itemId, amount, detailId });
   }
-  if (!out.length) throw new Error("items_required");
+
+  if (!out.length) 
+    throw new Error("items_required");
+
   return out;
+
 }
 
 async function authHKorAdmin(req) {
   const session = await readSession(req);
-  if (!session) throw new Error("unauthorized");
+
+  if (!session) 
+    throw new Error("unauthorized");
+
   const role = (session.role || "").toUpperCase();
-  if (role !== "HOUSEKEEPER" && role !== "ADMIN") throw new Error("forbidden");
+
+  if (role !== "HOUSEKEEPER" && role !== "ADMIN") 
+    throw new Error("forbidden");
+
   return session;
 }
 
 // ---------- PATCH: อัปเดตสต็อก & รายการใบเบิก ----------
 export async function PATCH(req, { params }) {
+
   try {
+
     const session = await authHKorAdmin(req);
+
     const wlno = Number(params?.wlno);
+
     if (!Number.isInteger(wlno) || wlno <= 0) {
       return NextResponse.json({ error: "invalid_wlno" }, { status: 400 });
     }
 
-    const body = await req.json().catch(() => ({}));
+    const body = await req.json().catch(() => ({}))
+    
     const items = parseItems(body.items);
 
     const conn = await createConnection();
+
     try {
+
       await conn.beginTransaction();
 
       // 0) ตรวจใบเบิก & ล็อก
@@ -65,6 +80,7 @@ export async function PATCH(req, { params }) {
         "SELECT WL_No FROM withdraw_list WHERE WL_No = ? FOR UPDATE",
         [wlno]
       );
+
       if (!wlRows.length) throw new Error("withdraw_list_not_found");
 
       // 1) คืนของ: ล็อกสินค้า แล้วเพิ่มสต็อก + อัปเดต WD
@@ -76,6 +92,7 @@ export async function PATCH(req, { params }) {
           "SELECT I_Quantity FROM item WHERE I_Id = ? FOR UPDATE",
           [itemId]
         );
+        
         if (!lockRows.length) throw new Error(`item_not_found:${itemId}`);
 
         // เพิ่มสต็อก (คืนของ)
@@ -84,25 +101,30 @@ export async function PATCH(req, { params }) {
           [amount, itemId]
         );
 
+        const [[itemRow]] = await conn.execute(
+          "SELECT I_Quantity FROM item WHERE I_Id = ?",
+          [itemId]
+        );
+
+        const afterReturnAmount = Number(itemRow?.I_Quantity ?? 0);
+
         // อัปเดตแถว withdraw_detail ของใบนี้:
         // - ถ้ารู้ WD_Id ให้ใช้เจาะจง, ถ้าไม่รู้ให้อิง WL_No+I_Id (อาจกระทบหลายแถว ถ้ามีหลายดีเทลของชิ้นเดียวกัน)
         if (detailId && Number.isInteger(detailId)) {
           await conn.execute(
             `UPDATE withdraw_detail
-               SET WD_Return_Left = WD_Return_Left + ?,
-                   WD_Amount_Left = GREATEST(WD_Amount_Left - ?, 0),
-                   WD_After_Return_Amount = (SELECT I_Quantity FROM item WHERE I_Id = ?)
+               SET WD_Return_Left = ?,
+                   WD_After_Return_Amount = ?
              WHERE WD_Id = ? AND WL_No = ?`,
-            [amount, amount, itemId, detailId, wlno]
+            [amount, afterReturnAmount, detailId, wlno]
           );
         } else {
           await conn.execute(
             `UPDATE withdraw_detail
-               SET WD_Return_Left = WD_Return_Left + ?,
-                   WD_Amount_Left = GREATEST(WD_Amount_Left - ?, 0),
-                   WD_After_Return_Amount = (SELECT I_Quantity FROM item WHERE I_Id = ?)
+               SET WD_Return_Left = ?,
+                   WD_After_Return_Amount = ?
              WHERE WL_No = ? AND I_Id = ?`,
-            [amount, amount, itemId, wlno, itemId]
+            [amount, afterReturnAmount, wlno, itemId]
           );
         }
       }
@@ -196,12 +218,9 @@ export async function POST(req, { params }) {
       if (!wlRows.length) throw new Error("withdraw_list_not_found");
 
       // สร้าง TRANSACTION head
-      const baseNote = "คืนของ";
-      const fullNote = extraNote ? `${baseNote} - ${extraNote}` : baseNote;
-
       const [trxHead] = await conn.execute(
         "INSERT INTO `transaction` (`T_DateTime`, `T_Note`, `HK_Username`) VALUES (NOW(), ?, ?)",
-        [fullNote, session.sub]
+        ["คืนของ", session.sub]
       );
       const T_No = trxHead.insertId;
 
@@ -212,6 +231,7 @@ export async function POST(req, { params }) {
           "SELECT I_Quantity FROM item WHERE I_Id = ?",
           [itemId]
         );
+
         if (!after) throw new Error(`item_not_found:${itemId}`);
         const afterLeft = Number(after.I_Quantity);
 
@@ -219,7 +239,7 @@ export async function POST(req, { params }) {
           `INSERT INTO transaction_detail
              (TD_Total_Left, TD_Amount_Changed, T_No, I_Id)
            VALUES (?, ?, ?, ?)`,
-          [afterLeft, amount, T_No, itemId]
+          [afterLeft + amount, amount, T_No, itemId]
         );
       }
 

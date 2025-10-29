@@ -1,3 +1,5 @@
+// src\app\api\auth\logout\route.js
+
 import { NextResponse } from "next/server";
 import { createConnection } from "@/lib/db";
 import { clearSessionCookie, readSession } from "@/lib/auth";

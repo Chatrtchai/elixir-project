@@ -1,3 +1,5 @@
+// src\app\api\auth\login\route.js
+
 import { NextResponse } from "next/server";
 import { createConnection } from "@/lib/db";
 import { createSession } from "@/lib/auth";
@@ -6,9 +8,6 @@ import bcrypt from "bcryptjs";
 export async function POST(req) {
   const { username, password } = await req.json();
   const conn = await createConnection();
-
-  // console.log("Login attempt:", username);
-  // console.log("Password: ", password);
 
   try {
     await conn.beginTransaction();
@@ -26,6 +25,20 @@ export async function POST(req) {
       );
     }
 
+    // ถ้าคนนี้กำลังล็อกอินอยู่แล้ว -> กันการล็อกอินซ้ำ
+    if (Number(user.Is_Login) === 1) {
+      // ถ้าต้องการโหมดบังคับ สามารถปลดคอมเมนต์โค้ดด้านล่าง
+      // if (force) {
+      //   await conn.execute("UPDATE `user` SET Is_Login = 0 WHERE Username = ?", [username]);
+      // } else {
+      await conn.rollback();
+      return NextResponse.json(
+        { error: "บัญชีนี้กำลังใช้งานอยู่" },
+        { status: 409 }
+      );
+      // }
+    }
+
     const stored = String(user.Password || "");
     const isHashed =
       stored.startsWith("$2a$") ||
@@ -37,7 +50,7 @@ export async function POST(req) {
       ok = await bcrypt.compare(password, stored);
     } else {
       // first-login migration: เปรียบเทียบ plaintext ครั้งแรก
-      ok = (password === stored);
+      ok = password === stored;
       if (ok) {
         const newHash = await bcrypt.hash(password, 10);
         await conn.execute(

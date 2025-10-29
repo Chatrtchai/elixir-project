@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function HKHistoryPage() {
   const [rows, setRows] = useState([]);
@@ -37,7 +38,7 @@ export default function HKHistoryPage() {
             ประวัติการทำรายการ
           </h1>
           <p className="text-sm text-gray-500">
-            สร้างใบเบิกของ ดูรายละเอียด และคืนของ
+            ประวัติการทำรายการทั้งหมดภายในระบบ
           </p>
         </div>
 
@@ -46,7 +47,7 @@ export default function HKHistoryPage() {
           onChange={(e) => setFilter(e.target.value)}
           className="border rounded-md px-3 py-1 text-sm"
         >
-          <option value="transaction">รายการเบิกของ</option>
+          <option value="transaction">คลังของ</option>
           <option value="request_transaction">รายการคำขอสั่งซื้อ</option>
         </select>
       </header>
@@ -58,6 +59,7 @@ export default function HKHistoryPage() {
               <th className="text-left px-4 py-2">วันเวลา</th>
               <th className="text-left px-4 py-2">รายละเอียด</th>
               <th className="text-left px-4 py-2">ผู้กระทำ</th>
+              <th className="text-center px-4 py-2">ดำเนินการ</th>
             </tr>
           </thead>
           <tbody>
@@ -83,10 +85,27 @@ export default function HKHistoryPage() {
               rows.map((r) => (
                 <tr key={r.id} className="border-t">
                   <td className="px-4 py-2">
-                    {new Date(r.datetime).toLocaleString("th-TH")}
+                    {new Date(r.datetime).toLocaleString("th-TH", {
+                      second: "2-digit",
+                      minute: "2-digit",
+                      hour: "2-digit",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
                   </td>
                   <td className="px-4 py-2">{r.note}</td>
                   <td className="px-4 py-2 text-gray-600">{r.actor || "-"}</td>
+                  <td className="px-4 py-2 text-center">
+                    <Link
+                      href={`/housekeeper/history/${
+                        r.id
+                      }?type=${encodeURIComponent(filter)}`}
+                      className="px-3 py-1 text-gray-500 rounded-md text-sm hover:underline transition"
+                    >
+                      รายละเอียด
+                    </Link>
+                  </td>
                 </tr>
               ))
             )}

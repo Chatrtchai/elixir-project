@@ -11,7 +11,7 @@ export async function createSession({ sub, name, role }) {
   const token = await new SignJWT({ sub, name, role })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("7d")
+    .setExpirationTime("8h")
     .sign(getSecret());
   return {
     name: COOKIE,
@@ -29,10 +29,35 @@ export async function readSession(req) {
   const store = "cookies" in req ? req.cookies : cookies();
   const token = store.get(COOKIE)?.value;
   if (!token) return null;
+
   try {
     const { payload } = await jwtVerify(token, getSecret());
     return { sub: payload.sub, name: payload.name, role: payload.role };
-  } catch {
+  } catch (e) {
+    // token หมดอายุหรือ verify ไม่ผ่าน
+    let sub = null;
+    try {
+      const decoded = decodeJwt(token);
+      sub = decoded?.sub || null;
+    } catch {}
+
+    // เคลียร์ cookie
+    const clearCookie = clearSessionCookie();
+    store.set(clearCookie.name, clearCookie.value, clearCookie.options);
+
+    // ถ้ารู้ username → อัปเดต Is_Login = 0
+    if (sub) {
+      try {
+        const conn = await createConnection();
+        await conn.execute(
+          "UPDATE `user` SET Is_Login = 0 WHERE Username = ?",
+          [sub]
+        );
+        await conn.end();
+      } catch (err) {
+        console.error("Failed to auto logout user:", err);
+      }
+    }
     return null;
   }
 }

@@ -194,7 +194,7 @@ export default function HKInventoryPage() {
               <tr>
                 {/* <th style={{ width: 100, textAlign: "left" }}>รหัส</th> */}
                 <th style={{ textAlign: "left" }}>รายการ</th>
-                <th style={{ width: 120, textAlign: "right" }}>คงเหลือ</th>
+                <th style={{ width: 120, textAlign: "center" }}>จำนวน (ชิ้น)</th>
               </tr>
             </thead>
             <tbody>
@@ -203,8 +203,8 @@ export default function HKInventoryPage() {
                   <tr key={`print-${r.I_Id}`}>
                     {/* <td>{safe(r.I_Id)}</td> */}
                     <td>{safe(r.I_Name)}</td>
-                    <td style={{ textAlign: "right" }}>
-                      {Number(r.I_Quantity ?? 0)}
+                    <td style={{ textAlign: "center" }}>
+                      _________
                     </td>
                   </tr>
                 ))

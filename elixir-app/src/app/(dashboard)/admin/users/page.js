@@ -75,23 +75,15 @@ export default function AdminUsersPage() {
     <div className="p-6 space-y-6">
       <header className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl text-[color-primary]">
+          <h1 className="text-2xl text-[var(--color-primary)] font-bold">
             จัดการบัญชีผู้ใช้งาน
           </h1>
+          <p className="text-gray-600">เพิ่ม แก้ไข หรือตรวจสอบข้อมูลผู้ใช้งาน</p>
         </div>
         <Link
           href="/admin/users/new"
-          className="flex items-center gap-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white px-3 py-2 text-sm"
+          className="flex items-center gap-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white px-3 py-2 text-sm transition"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            height="24px"
-            viewBox="0 -960 960 960"
-            width="24px"
-            fill="#fff"
-          >
-            <path d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80Zm-360-80q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Z" />
-          </svg>
           เพิ่มบัญชีผู้ใช้งาน
         </Link>
       </header>

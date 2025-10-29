@@ -1,8 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 
-export default function ModalWrapper({ title, children, width = "w-[520px]" }) {
-  const router = useRouter();
+export default function ModalWrapper({ title, children, width}) {
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
       <div className={`bg-white rounded-2xl shadow-xl ${width}`}>

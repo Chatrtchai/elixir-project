@@ -85,15 +85,22 @@ export default function HKHistoryPage() {
               rows.map((r) => (
                 <tr key={r.id} className="border-t">
                   <td className="px-4 py-2">
-                    {new Date(r.datetime).toLocaleString("th-TH")}
+                    {new Date(r.datetime).toLocaleString("th-TH", {
+                      second: "2-digit",
+                      minute: "2-digit",
+                      hour: "2-digit",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
                   </td>
                   <td className="px-4 py-2">{r.note}</td>
                   <td className="px-4 py-2 text-gray-600">{r.actor || "-"}</td>
                   <td className="px-4 py-2 text-center">
                     <Link
-                      href={`/admin/history/${
-                        r.id
-                      }?type=${encodeURIComponent(filter)}`}
+                      href={`/admin/history/${r.id}?type=${encodeURIComponent(
+                        filter
+                      )}`}
                       className="px-3 py-1 text-gray-500 rounded-md text-sm hover:underline transition"
                     >
                       รายละเอียด

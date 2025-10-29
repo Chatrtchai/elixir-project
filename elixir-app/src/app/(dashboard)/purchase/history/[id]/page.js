@@ -115,7 +115,17 @@ export default function HKHistoryDetailModalPage() {
                           <Td>{r.RT_No ?? "-"}</Td>
                           <Td>
                             {r.RT_DateTime
-                              ? new Date(r.RT_DateTime).toLocaleString("th-TH")
+                              ? new Date(r.RT_DateTime).toLocaleString(
+                                  "th-TH",
+                                  {
+                                    second: "2-digit",
+                                    minute: "2-digit",
+                                    hour: "2-digit",
+                                    day: "numeric",
+                                    month: "long",
+                                    year: "numeric",
+                                  }
+                                )
                               : "-"}
                           </Td>
                           <Td>{r.RT_Note ?? "-"}</Td>

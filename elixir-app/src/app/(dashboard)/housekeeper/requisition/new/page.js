@@ -375,7 +375,7 @@ export default function NewWithdrawModal() {
             disabled={hasInvalid}
             className="w-full sm:w-auto px-5 py-2 rounded-[5px] bg-green-600 text-white text-sm font-medium disabled:opacity-50 cursor-pointer hover:bg-green-700"
           >
-            สร้างรายการ
+            สร้างรายการเบิก
           </button>
 
           <button

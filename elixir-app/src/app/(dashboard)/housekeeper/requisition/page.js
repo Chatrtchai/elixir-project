@@ -56,7 +56,7 @@ export default function HKRequisitionPage() {
           href="/housekeeper/requisition/new"
           className="rounded-lg bg-[var(--color-primary)] text-white px-4 py-2 hover:bg-[var(--color-primary-dark)] text-center transition"
         >
-          + สร้างใบเบิกของ
+          สร้างใบเบิกของ
         </Link>
       </header>
 
@@ -89,21 +89,23 @@ export default function HKRequisitionPage() {
                 <td className="px-4 py-2">{r.WL_No}</td>
                 <td className="px-4 py-2">
                   {new Date(r.WL_DateTime).toLocaleString("th-TH", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
+                    second: "2-digit",
                     minute: "2-digit",
+                    hour: "2-digit",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
                   })}
                 </td>
                 <td className="px-4 py-2">
                   {r.WL_Finish_DateTime
                     ? new Date(r.WL_Finish_DateTime).toLocaleString("th-TH", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                        hour: "2-digit",
+                        second: "2-digit",
                         minute: "2-digit",
+                        hour: "2-digit",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
                       })
                     : "-"}
                 </td>

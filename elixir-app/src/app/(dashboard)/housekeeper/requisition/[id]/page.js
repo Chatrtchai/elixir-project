@@ -27,8 +27,29 @@ export default function WithdrawDetailModal() {
       <div className="space-y-4 text-sm">
         <Row
           label="วันที่สร้าง"
-          value={new Date(data.WL_DateTime).toLocaleString("th-TH")}
+          value={new Date(data.WL_DateTime).toLocaleString("th-TH", {
+            second: "2-digit",
+            minute: "2-digit",
+            hour: "2-digit",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}
         />
+        {Number(data.WL_Is_Finished) === 1 && (
+          <Row
+            label="วันที่คืน"
+            value={new Date(data.WL_Finish_DateTime).toLocaleString("th-TH", {
+              second: "2-digit",
+              minute: "2-digit",
+              hour: "2-digit",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          />
+        )}
+
         <Row
           label="สถานะ"
           value={data.WL_Is_Finished ? "เสร็จสิ้นแล้ว" : "กำลังดำเนินการ"}
@@ -38,8 +59,9 @@ export default function WithdrawDetailModal() {
           <div className="text-gray-600 mb-1 font-medium">รายละเอียด</div>
           <ul className="list-disc list-inside space-y-1">
             {(data.details || []).map((d) => {
-              const returnedAll =
-                d.WD_Amount_Left === 0 || d.WD_Return_Left === d.WD_Amount;
+              const returnedAll = d.WD_Return_Left === d.WD_Amount;
+              const returnedNone =
+                d.WD_Return_Left === 0 && Number(data.WL_Is_Finished) === 1;
               const returnedSome = d.WD_Return_Left > 0 && !returnedAll;
 
               return (
@@ -48,10 +70,22 @@ export default function WithdrawDetailModal() {
                   {returnedSome && (
                     <span className="text-gray-500">
                       {" "}
-                      (คืนแล้ว {d.WD_Return_Left})
+                      (คืน {d.WD_Return_Left})
                     </span>
                   )}
-                  {returnedAll && <span className="text-red-500"> (หมด)</span>}
+                  {returnedAll && (
+                    <span className="text-emerald-500"> (คืนครบ)</span>
+                  )}
+                  {returnedNone && <span className="text-red-500"> (หมด)</span>}
+                  <ul className="list-disc list-inside ml-5 mt-1">
+                    <li>
+                      จำนวนของในคลัง (ปัจจุบัน){" "}
+                      {data.WL_Is_Finished === 1
+                        ? d.WD_After_Return_Amount // ✅ ถ้าคืนครบแล้ว
+                        : d.WD_Amount_Left}
+                      {" ชิ้น"}
+                    </li>
+                  </ul>
                 </li>
               );
             })}

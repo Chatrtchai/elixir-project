@@ -80,11 +80,12 @@ export default function HKRequestDetailModal() {
           value={
             data.R_DateTime
               ? new Date(data.R_DateTime).toLocaleString("th-TH", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
+                  second: "2-digit",
                   minute: "2-digit",
+                  hour: "2-digit",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
                 })
               : "-"
           }
@@ -94,11 +95,12 @@ export default function HKRequestDetailModal() {
           value={
             data.R_LastModified
               ? new Date(data.R_LastModified).toLocaleString("th-TH", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
+                  second: "2-digit",
                   minute: "2-digit",
+                  hour: "2-digit",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
                 })
               : "-"
           }

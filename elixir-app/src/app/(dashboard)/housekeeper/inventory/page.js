@@ -87,11 +87,12 @@ export default function HKInventoryPage() {
 
   const formatNow = () =>
     new Date().toLocaleString("th-TH", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
+      second: "2-digit",
       minute: "2-digit",
+      hour: "2-digit",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
     });
 
   return (

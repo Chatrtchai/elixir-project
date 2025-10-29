@@ -66,13 +66,14 @@ export default function HKRequestDetailModal() {
   if (!data) return null;
 
   return (
-    <ModalWrapper title={`รายละเอียดคำขอ #${id}`}>
+    <ModalWrapper title={`รายละเอียดคำขอ #${id}`} width={"w-[600px]"}>
       <div className="space-y-3 text-sm">
         {error && (
           <div className="bg-red-100 text-red-700 px-3 py-2 rounded-lg">
             {error}
           </div>
         )}
+        <Row label="ผู้ขอ" value={data.HK_Fullname} />
         <Row label="สถานะ" value={TH[data.R_Status] || data.R_Status} />
         <Row
           label="วันที่สร้าง"
@@ -116,7 +117,7 @@ export default function HKRequestDetailModal() {
           <ul className="list-disc list-inside space-y-1">
             {(data.details || []).map((d) => (
               <li key={d.RD_Id}>
-                {d.I_Name} × {d.RD_Amount}
+                {d.I_Name} x {d.RD_Amount}
               </li>
             ))}
           </ul>

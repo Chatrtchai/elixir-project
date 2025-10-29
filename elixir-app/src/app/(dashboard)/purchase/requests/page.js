@@ -25,11 +25,26 @@ export default function PurchaseRequestsPage() {
     const u = new URL("/api/requests", window.location.origin);
     if (q) u.searchParams.set("q", q);
     if (status !== "ALL") u.searchParams.set("status", status);
-    const res = await fetch(u.toString());
-    const data = await res.json();
-    setRows(data || []);
-    setLoading(false);
+
+    try {
+      const res = await fetch(u.toString());
+      const data = await res.json();
+      console.log("API data:", data);
+
+      if (Array.isArray(data)) {
+        setRows(data);
+      } else {
+        console.error("Unexpected response:", data);
+        setRows([]);
+      }
+    } catch (err) {
+      console.error("fetch failed", err);
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   useEffect(() => {
     fetchData();

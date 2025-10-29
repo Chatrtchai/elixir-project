@@ -1,9 +1,10 @@
-// src\app\(dashboard)\purchase\history\page.js
+// src/app/(dashboard)/purchase/history/page.js
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
-export default function PurchaseHistoryPage() {
+export default function HKHistoryPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -37,7 +38,7 @@ export default function PurchaseHistoryPage() {
             ประวัติการทำรายการ
           </h1>
           <p className="text-sm text-gray-500">
-            สร้างใบเบิกของ ดูรายละเอียด และคืนของ
+            ประวัติการทำรายการทั้งหมดภายในระบบ
           </p>
         </div>
 
@@ -46,7 +47,7 @@ export default function PurchaseHistoryPage() {
           onChange={(e) => setFilter(e.target.value)}
           className="border rounded-md px-3 py-1 text-sm"
         >
-          <option value="transaction">รายการเบิกของ</option>
+          <option value="transaction">คลังของ</option>
           <option value="request_transaction">รายการคำขอสั่งซื้อ</option>
         </select>
       </header>
@@ -58,6 +59,7 @@ export default function PurchaseHistoryPage() {
               <th className="text-left px-4 py-2">วันเวลา</th>
               <th className="text-left px-4 py-2">รายละเอียด</th>
               <th className="text-left px-4 py-2">ผู้กระทำ</th>
+              <th className="text-center px-4 py-2">ดำเนินการ</th>
             </tr>
           </thead>
           <tbody>
@@ -87,6 +89,16 @@ export default function PurchaseHistoryPage() {
                   </td>
                   <td className="px-4 py-2">{r.note}</td>
                   <td className="px-4 py-2 text-gray-600">{r.actor || "-"}</td>
+                  <td className="px-4 py-2 text-center">
+                    <Link
+                      href={`/admin/history/${
+                        r.id
+                      }?type=${encodeURIComponent(filter)}`}
+                      className="px-3 py-1 text-gray-500 rounded-md text-sm hover:underline transition"
+                    >
+                      รายละเอียด
+                    </Link>
+                  </td>
                 </tr>
               ))
             )}

@@ -91,7 +91,7 @@ export default function HKHistoryPage() {
                   <td className="px-4 py-2 text-gray-600">{r.actor || "-"}</td>
                   <td className="px-4 py-2 text-center">
                     <Link
-                      href={`/admin/history/${
+                      href={`/head/history/${
                         r.id
                       }?type=${encodeURIComponent(filter)}`}
                       className="px-3 py-1 text-gray-500 rounded-md text-sm hover:underline transition"

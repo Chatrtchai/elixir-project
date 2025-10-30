@@ -101,7 +101,6 @@ export default function HKHistoryDetailModalPage() {
                   <table className="min-w-full text-sm">
                     <thead className="bg-gray-50 text-gray-600 sticky top-0">
                       <tr>
-                        <Th>ลำดับ</Th>
                         <Th>วันที่</Th>
                         <Th>หมายเหตุ</Th>
                       </tr>
@@ -112,7 +111,6 @@ export default function HKHistoryDetailModalPage() {
                           key={r.RT_No || idx}
                           className="border-t hover:bg-gray-50"
                         >
-                          <Td>{r.RT_No ?? "-"}</Td>
                           <Td>
                             {r.RT_DateTime
                               ? new Date(r.RT_DateTime).toLocaleString("th-TH")
@@ -128,7 +126,6 @@ export default function HKHistoryDetailModalPage() {
                   <table className="min-w-full text-sm">
                     <thead className="bg-gray-50 text-gray-600 sticky top-0">
                       <tr>
-                        <Th>ลำดับ</Th>
                         <Th>รายการ</Th>
                         <Th>จำนวนเบิก</Th>
                         <Th>จำนวนคงเหลือ (หลังทำรายการ)</Th>
@@ -140,7 +137,6 @@ export default function HKHistoryDetailModalPage() {
                           key={r.TD_Id || idx}
                           className="border-t hover:bg-gray-50"
                         >
-                          <Td>{r.TD_Id ?? "-"}</Td>
                           <Td>{r.I_Name ?? "-"}</Td>
                           <Td>{r.TD_Amount_Changed ?? "-"}</Td>
                           <Td>{r.TD_Total_Left ?? "-"}</Td>

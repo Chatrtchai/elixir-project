@@ -7,8 +7,6 @@ import { usePathname, useRouter } from "next/navigation";
 
 const PRIMARY = "text-[--color-primary]";
 
-const iconCls = "w-7 h-7 md:w-8 md:h-8";
-
 export default function DashboardLayout({ children }) {
   const [user, setUser] = useState(null); // { username, name, role }
   const [loading, setLoading] = useState(true);

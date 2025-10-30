@@ -36,7 +36,7 @@ export default function UserDetailModal() {
     );
 
   return (
-    <ModalWrapper title="รายละเอียดผู้ใช้">
+    <ModalWrapper title="รายละเอียดผู้ใช้" width={"w-[600px]"}>
       <div className="space-y-3 text-sm">
         <div>
           <span className="text-gray-500">ชื่อผู้ใช้:</span> {data.Username}

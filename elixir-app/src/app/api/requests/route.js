@@ -162,3 +162,61 @@ export async function GET(req) {
     await conn.end();
   }
 }
+
+export async function POST(req) {
+  const session = await readSession(req);
+  if (!session) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const { headUsername, items } = await req.json();
+    if (!headUsername || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: "ข้อมูลไม่ครบถ้วน" }, { status: 400 });
+    }
+
+    const conn = await createConnection();
+    await conn.beginTransaction();
+
+    // 1️⃣ INSERT INTO REQUEST
+    const [reqResult] = await conn.execute(
+      `
+      INSERT INTO REQUEST (R_Status, R_DateTime, R_LastModified, HK_Username, H_Username, PD_Username)
+      VALUES ('Waiting', NOW(), NOW(), ?, ?, NULL)
+      `,
+      [session.sub, headUsername]
+    );
+    const requestNo = reqResult.insertId;
+
+    // 2️⃣ INSERT INTO REQUEST_DETAIL (ทีละรายการ)
+    for (const item of items) {
+      await conn.execute(
+        `
+        INSERT INTO REQUEST_DETAIL (RD_Amount, R_No, I_Id)
+        VALUES (?, ?, ?)
+        `,
+        [item.amount, requestNo, item.itemId]
+      );
+    }
+
+    // 3️⃣ INSERT INTO REQUEST_TRANSACTION
+    await conn.execute(
+      `
+      INSERT INTO REQUEST_TRANSACTION (RT_DateTime, RT_Note, R_No, Username)
+      VALUES (NOW(), 'สร้างคำขอจัดซื้อใหม่', ?, ?)
+      `,
+      [requestNo, session.sub]
+    );
+
+    await conn.commit();
+    await conn.end();
+
+    return NextResponse.json({ success: true, R_No: requestNo });
+  } catch (err) {
+    console.error("POST /api/requests error:", err);
+    return NextResponse.json(
+      { error: "ไม่สามารถบันทึกคำขอได้" },
+      { status: 500 }
+    );
+  }
+}

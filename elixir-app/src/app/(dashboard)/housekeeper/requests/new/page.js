@@ -162,6 +162,8 @@ export default function NewHKRequestModal() {
       })),
     };
 
+    console.log(payload);
+
     setSaving(true);
     try {
       const res = await fetch("/api/requests", {

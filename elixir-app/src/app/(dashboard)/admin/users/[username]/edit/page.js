@@ -81,15 +81,15 @@ export default function UserEditModal() {
   };
 
   return (
-    <ModalWrapper title="แก้ไขข้อมูลผู้ใช้">
+    <ModalWrapper title="แก้ไขข้อมูลผู้ใช้" width={"w-[600px]"}>
       <form onSubmit={save} className="space-y-4">
         {/* ✅ username editable */}
         <div>
           <label className="block text-sm font-medium mb-1">ชื่อผู้ใช้</label>
           <input
-            className="w-full rounded-md border px-3 py-2"
+            className="w-full rounded-md border px-3 py-2 bg-gray-50"
             value={form.username}
-            onChange={(e) => setForm({ ...form, username: e.target.value })}
+            disabled
             required
           />
         </div>

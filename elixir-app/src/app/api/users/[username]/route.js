@@ -44,12 +44,6 @@ export async function PATCH(req, { params }) {
     const set = [];
     const values = [];
 
-    // ✅ NEW: ถ้ามี username ใหม่ → อัปเดตได้
-    if (body?.username && body.username !== oldUsername) {
-      set.push("Username=?");
-      values.push(body.username);
-    }
-
     // Fullname
     const nextFullname = body?.Fullname ?? body?.fullName;
     if (nextFullname !== undefined) {

@@ -23,7 +23,7 @@ function parseItems(bodyItems = []) {
       throw new Error("invalid_item_id");
     }
 
-    if (!Number.isInteger(amount) || amount <= 0) {
+    if (!Number.isInteger(amount) || amount < 0) {
       // คืนอย่างน้อย 1 ชิ้น
       throw new Error("invalid_amount");
     }
@@ -56,8 +56,6 @@ async function authHKorAdmin(req) {
 export async function PATCH(req, { params }) {
 
   try {
-
-    const session = await authHKorAdmin(req);
 
     const wlno = Number(params?.wlno);
 
@@ -129,15 +127,6 @@ export async function PATCH(req, { params }) {
         }
       }
 
-      // 2) ถ้าคืนครบทุกบรรทัด → ปิดใบ (ออปชัน)
-      const [[sumRow]] = await conn.execute(
-        `SELECT SUM(WD_Amount_Left) AS left_sum
-           FROM withdraw_detail
-          WHERE WL_No = ?`,
-        [wlno]
-      );
-      const leftSum = Number(sumRow?.left_sum ?? 0);
-
       await conn.execute(
         `UPDATE withdraw_list
             SET WL_Is_Finished = 1,
@@ -152,7 +141,7 @@ export async function PATCH(req, { params }) {
         {
           ok: true,
           WL_No: wlno,
-          finished: leftSum === 0,
+          finished: 1,
         },
         { status: 200 }
       );
@@ -189,6 +178,7 @@ export async function PATCH(req, { params }) {
     }
   } catch (e) {
     // อ่าน body ไม่ได้/อื่นๆ
+    console.log("+ ERROR ON PATCH!")
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
 }
@@ -239,7 +229,7 @@ export async function POST(req, { params }) {
           `INSERT INTO transaction_detail
              (TD_Total_Left, TD_Amount_Changed, T_No, I_Id)
            VALUES (?, ?, ?, ?)`,
-          [afterLeft + amount, amount, T_No, itemId]
+          [afterLeft, amount, T_No, itemId]
         );
       }
 
@@ -281,6 +271,7 @@ export async function POST(req, { params }) {
       );
     }
   } catch {
+    console.log("/ ERROR ON PATCH!");
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
 }

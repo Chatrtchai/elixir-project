@@ -27,7 +27,7 @@ export default function WithdrawReturnModal() {
             detailId: d.WD_Id,
             itemId: d.I_Id, // ✅ ใส่ไว้เพื่อส่งให้ API
             amount: "", // controlled; ค่าว่างหมายถึง 0
-            max: Number(d.WD_Amount_Left ?? 0),
+            // max: Number(d.WD_Amount_Left ?? 0),
             item: d.I_Name,
             withdrawn: Number(d.WD_Amount ?? 0),
           }))
@@ -53,15 +53,17 @@ export default function WithdrawReturnModal() {
       setLoading(true);
       setErr("");
 
+      console.log("returns:", returns);
+
       // ตรวจความถูกต้องก่อนส่ง
       for (const r of returns) {
         const val = Number(r.amount === "" ? 0 : r.amount);
         if (!Number.isFinite(val) || val < 0) {
           throw new Error(`จำนวนคืนของ "${r.item}" ไม่ถูกต้อง`);
         }
-        if (val > r.max) {
+        if (val > r.withdrawn) {
           throw new Error(
-            `จำนวนคืนของ "${r.item}" เกินคงเหลือที่คืนได้ (${r.max})`
+            `จำนวนคืนของ "${r.item}" เกินคงเหลือที่คืนได้ (${r.withdrawn})`
           );
         }
       }
@@ -76,7 +78,9 @@ export default function WithdrawReturnModal() {
               : undefined,
           amount: Number(r.amount === "" ? 0 : r.amount),
         }))
-        .filter((x) => x.amount > 0);
+        .filter((x) => x.amount >= 0);
+
+      console.log("items ", items);
 
       if (items.length === 0) {
         throw new Error("กรุณาระบุจำนวนที่คืนอย่างน้อย 1 รายการ");
@@ -142,12 +146,12 @@ export default function WithdrawReturnModal() {
             <tbody>
               {(data.details || []).map((d, idx) => {
                 const r = returns[idx] ?? {};
-                const max = Number(d.WD_Amount_Left ?? 0);
+                {/* const max = Number(d.WD_Amount_Left ?? 0); */}
                 const withdrawn = Number(d.WD_Amount ?? 0);
                 const amountStr = r.amount ?? "";
 
                 const val = Number(amountStr === "" ? 0 : amountStr);
-                const over = val > max;
+                const over = val > withdrawn;
                 const invalid =
                   amountStr !== "" &&
                   (!Number.isFinite(Number(amountStr)) ||
@@ -168,7 +172,7 @@ export default function WithdrawReturnModal() {
                         <input
                           type="number"
                           min="0"
-                          max={max}
+                          max={withdrawn}
                           inputMode="numeric"
                           value={amountStr}
                           onChange={(e) => {
@@ -177,7 +181,7 @@ export default function WithdrawReturnModal() {
                               detailId: d.WD_Id,
                               itemId: d.I_Id,
                               amount: "",
-                              max,
+                              // max,
                               item: d.I_Name,
                               withdrawn,
                             };
@@ -196,7 +200,7 @@ export default function WithdrawReturnModal() {
                         <div className="text-xs text-red-600 mt-1">
                           {invalid
                             ? "กรุณาใส่จำนวนที่ถูกต้อง"
-                            : `เกินคงเหลือที่คืนได้ (${max})`}
+                            : `เกินคงเหลือที่คืนได้ (${withdrawn})`}
                         </div>
                       )}
                     </td>

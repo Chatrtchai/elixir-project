@@ -30,10 +30,12 @@ export default function NewUserModal() {
   };
 
   return (
-    <ModalWrapper title="เพิ่มบัญชีผู้ใช้งาน">
+    <ModalWrapper title="เพิ่มบัญชีผู้ใช้งาน" width={"w-[600px]"}>
       <form onSubmit={save} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">ชื่อผู้ใช้ (ภาษาอังกฤษ)</label>
+          <label className="block text-sm font-medium mb-1">
+            ชื่อผู้ใช้ (ภาษาอังกฤษ)
+          </label>
           <input
             className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[--color-primary]"
             value={form.username}

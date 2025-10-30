@@ -30,8 +30,8 @@ export async function GET(_req, { params }) {
 }
 
 export async function PATCH(req, { params }) {
-  const oldUsername = params?.username; // จาก URL
-  if (!oldUsername) return jsonError("Missing username param", 400);
+  const currentUsername = params?.username; // จาก URL
+  if (!currentUsername) return jsonError("Missing username param", 400);
 
   let body;
   try {
@@ -83,10 +83,10 @@ export async function PATCH(req, { params }) {
       );
     }
 
-    // ✅ ใช้ oldUsername ใน WHERE
+    // ✅ ใช้ currentUsername ใน WHERE
     const conn = await createConnection();
     const sql = `UPDATE \`user\` SET ${set.join(", ")} WHERE Username=?`;
-    values.push(oldUsername);
+    values.push(currentUsername);
     const [res] = await conn.execute(sql, values);
     await conn.end();
 

@@ -19,7 +19,7 @@ export async function GET(req, { params }) {
 
   const conn = await createConnection();
   try {
-    // ---------- 1) ดึงข้อมูลหัวรายการ ----------
+    // ---------- 1) Header ----------
     let headerSql = "";
     let headerParams = [id];
 
@@ -34,7 +34,7 @@ export async function GET(req, { params }) {
           rt.Username             AS Username,
           'request_transaction'   AS type
         FROM request_transaction rt
-        JOIN user u ON u.Username = rt.Username
+        LEFT JOIN user u ON u.Username = rt.Username
         WHERE rt.RT_No = ?
         LIMIT 1
       `;
@@ -47,7 +47,7 @@ export async function GET(req, { params }) {
           u.Fullname              AS actor,
           'transaction'           AS type
         FROM transaction t
-        JOIN user u ON u.Username = t.HK_Username
+        LEFT JOIN user u ON u.Username = t.HK_Username
         WHERE t.T_No = ?
         LIMIT 1
       `;
@@ -61,11 +61,12 @@ export async function GET(req, { params }) {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
 
-    // ---------- 2) ดึงรายละเอียดบรรทัด ----------
+    // ---------- 2) Lines ----------
     let lines = [];
+    let rd_lines = []; // ✅ บรรทัดจาก REQUEST_DETAIL
 
     if (header.type === "request_transaction") {
-      // รายการเดียวแบบหัวตาราง
+      // คงรูปแบบเดิมของ lines (แถวเดียว: RT_*)
       lines = [
         {
           RT_No: header.id,
@@ -75,8 +76,31 @@ export async function GET(req, { params }) {
           Username: header.Username ?? null,
         },
       ];
+
+      // ✅ เพิ่มรายละเอียด REQUEST_DETAIL
+      const [rows] = await conn.execute(
+        `
+          SELECT 
+            rd.RD_Id,
+            rd.I_Id,
+            it.I_Name,
+            rd.RD_Amount
+          FROM request_detail rd
+          JOIN item it ON it.I_Id = rd.I_Id
+          WHERE rd.R_No = ?
+          ORDER BY rd.RD_Id ASC
+        `,
+        [header.R_No]
+      );
+
+      rd_lines = (rows || []).map((r) => ({
+        RD_Id: r.RD_Id,
+        I_Id: r.I_Id,
+        I_Name: r.I_Name,
+        RD_Amount: r.RD_Amount,
+      }));
     } else {
-      // 🔹 ดึง transaction_detail พร้อมชื่อ item
+      // transaction_detail (เหมือนเดิม)
       const [lineRows] = await conn.execute(
         `
           SELECT
@@ -110,7 +134,8 @@ export async function GET(req, { params }) {
       note: header.note,
       actor: header.actor,
       type: header.type,
-      lines,
+      lines, // ⬅️ คงไว้เหมือนเดิม (RT_* หรือ TD_*)
+      rd_lines, // ⬅️ เพิ่มบรรทัดจาก REQUEST_DETAIL (มีเมื่อ type=request_transaction)
     };
 
     await conn.end();

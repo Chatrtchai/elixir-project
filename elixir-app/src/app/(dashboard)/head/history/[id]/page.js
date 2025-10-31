@@ -54,6 +54,9 @@ export default function HKHistoryDetailModalPage() {
   // รองรับชื่อฟิลด์บรรทัดหลายรูปแบบจาก API
   const lines = data?.lines || data?.items || data?.details || data?.Rows || [];
 
+  // ✅ บรรทัดของ REQUEST_DETAIL (ถ้าไม่มีให้ fallback เป็น lines)
+  const rd_lines = data?.rd_lines || [];
+
   return (
     <ModalWrapper
       open
@@ -94,60 +97,56 @@ export default function HKHistoryDetailModalPage() {
           {/* รายการบรรทัด */}
           <section className="space-y-2">
             <h3 className="font-semibold">รายละเอียด</h3>
-            {Array.isArray(lines) && lines.length > 0 ? (
+
+            {type === "request_transaction" ? (
               <div className="overflow-y-auto max-h-[250px]">
-                {type === "request_transaction" ? (
-                  // 🔹 ตารางของ request_transaction
-                  <table className="min-w-full text-sm">
-                    <thead className="bg-gray-50 text-gray-600 sticky top-0">
-                      <tr>
-                        <Th>วันที่</Th>
-                        <Th>หมายเหตุ</Th>
+                {/* ✅ ตารางแสดง REQUEST_DETAIL */}
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-600 sticky top-0">
+                    <tr>
+                      <Th>ชื่อรายการ</Th>
+                      <Th>จำนวนที่ขอ</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(rd_lines.length ? rd_lines : lines).map((r, idx) => (
+                      <tr
+                        key={r.RD_Id || `${r.I_Id}-${idx}`}
+                        className="border-t hover:bg-gray-50"
+                      >
+                        <Td>{r.I_Name}</Td>
+                        <Td>{r.RD_Amount}</Td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {lines.map((r, idx) => (
-                        <tr
-                          key={r.RT_No || idx}
-                          className="border-t hover:bg-gray-50"
-                        >
-                          <Td>
-                            {r.RT_DateTime
-                              ? new Date(r.RT_DateTime).toLocaleString("th-TH")
-                              : "-"}
-                          </Td>
-                          <Td>{r.RT_Note ?? "-"}</Td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  // 🔹 ตารางของ transaction_detail
-                  <table className="min-w-full text-sm">
-                    <thead className="bg-gray-50 text-gray-600 sticky top-0">
-                      <tr>
-                        <Th>รายการ</Th>
-                        <Th>จำนวนเบิก</Th>
-                        <Th>จำนวนคงเหลือ (หลังทำรายการ)</Th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {lines.map((r, idx) => (
-                        <tr
-                          key={r.TD_Id || idx}
-                          className="border-t hover:bg-gray-50"
-                        >
-                          <Td>{r.I_Name ?? "-"}</Td>
-                          <Td>{r.TD_Amount_Changed ?? "-"}</Td>
-                          <Td>{r.TD_Total_Left ?? "-"}</Td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : (
-              <div className="text-gray-500">ไม่มีรายละเอียดบรรทัด</div>
+              // ตารางของ transaction_detail (เหมือนเดิม)
+              <div className="overflow-y-auto max-h-[250px]">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-600 sticky top-0">
+                    <tr>
+                      <Th>รายการ</Th>
+                      {data.note === "เบิกของ" && <Th>จำนวนที่เบิก</Th>}
+                      {data.note === "คืนของ" && <Th>จำนวนที่คืน</Th>}
+                      <Th>จำนวนคงเหลือ (หลังทำรายการ)</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lines.map((r, idx) => (
+                      <tr
+                        key={r.TD_Id || idx}
+                        className="border-t hover:bg-gray-50"
+                      >
+                        <Td>{r.I_Name ?? "-"}</Td>
+                        <Td>{r.TD_Amount_Changed ?? "-"}</Td>
+                        <Td>{r.TD_Total_Left ?? "-"}</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </section>
 

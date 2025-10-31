@@ -22,7 +22,7 @@ export default function HeadRequestsPage() {
 
   // UI state
   const [q, setQ] = useState("");
-  const [showFilter, setShowFilter] = useState(true);
+  const [showFilter, setShowFilter] = useState(false);
   const [checked, setChecked] = useState(() => new Set(STATUS_KEYS)); // เปิดทุกสถานะเริ่มต้น
 
   // โหลดข้อมูล
@@ -70,11 +70,16 @@ export default function HeadRequestsPage() {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 space-y-6">
       {/* ชื่อหน้า */}
-      <h1 className="text-3xl font-semibold text-black mb-4">
-        รายการคำขอจัดซื้อ
-      </h1>
+      <div>
+        <h1 className="text-2xl font-bold text-[var(--color-primary)]">
+          รายการคำขอจัดซื้อ
+        </h1>
+        <p className="text-sm text-gray-500">
+          สร้างใบเบิกของ ดูรายละเอียด และคืนของ
+        </p>
+      </div>
 
       {/* search + layout 2 คอลัมน์ */}
       <div className="grid grid-cols-1 gap-6">
@@ -85,7 +90,7 @@ export default function HeadRequestsPage() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="ค้นหา (รายการ)"
+              placeholder="ค้นหา"
               className="w-full h-12 rounded-lg border border-gray-300 bg-white px-3 py-2 text-base placeholder:text-gray-400 focus:outline-none focus:border-[--color-primary] focus:ring-1 focus:ring-[--color-primary]"
             />
             {/* ปุ่ม filter แบบ overlay */}
@@ -134,26 +139,26 @@ export default function HeadRequestsPage() {
 
           {/* ตาราง */}
           <div className="overflow-y-auto max-h-[600px] pr-[10px]">
-            <table className="min-w-full text-base">
+            <table className="min-w-full text-sm">
               <thead className="bg-gray-50 text-gray-600 sticky top-0">
                 <tr className="border-b">
-                  <th className="px-4 py-3 text-left">รายการที่</th>
-                  <th className="px-4 py-3 text-left">วันที่สร้าง</th>
-                  <th className="px-4 py-3 text-left">อัพเดตล่าสุด</th>
-                  <th className="px-4 py-3 text-center">สถานะ</th>
-                  <th className="px-4 py-3 text-center">ดำเนินการ</th>
+                  <th className="text-left px-4 py-2">เลขที่คำขอ</th>
+                  <th className="text-left px-4 py-2">วันที่สร้าง</th>
+                  <th className="text-left px-4 py-2">อัพเดตล่าสุด</th>
+                  <th className="text-center px-4 py-2">สถานะ</th>
+                  <th className="text-center px-4 py-2">ดำเนินการ</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((r) => {
                   const st = STATUS_MAP[r.R_Status] ?? {
-                    th: r.R_Status,
+                    th: r.R_Status ?? "-",
                     className: "text-gray-600",
                   };
                   return (
                     <tr key={r.R_No} className="border-t">
-                      <td className="px-4 py-3">{r.R_No}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-2">{r.R_No}</td>
+                      <td className="px-4 py-2">
                         {r.R_DateTime
                           ? new Date(r.R_DateTime).toLocaleString("th-TH", {
                               second: "2-digit",
@@ -165,7 +170,7 @@ export default function HeadRequestsPage() {
                             })
                           : "-"}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-2">
                         {r.R_LastModified
                           ? new Date(r.R_LastModified).toLocaleString("th-TH", {
                               second: "2-digit",
@@ -178,14 +183,14 @@ export default function HeadRequestsPage() {
                           : "-"}
                       </td>
                       <td
-                        className={`px-4 py-3 text-center font-medium ${st.className}`}
+                        className={`px-4 py-2 text-center font-medium ${st.className}`}
                       >
                         {st.th}
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-2 text-center">
                         <Link
-                          href={`/head/requests/${r.R_No}`}
-                          className="text-center inline-block px-5 py-1 rounded-md bg-gray-100 hover:bg-gray-200 text-black text-sm"
+                          href={`/purchase/requests/${r.R_No}`}
+                          className="text-[--color-primary] hover:underline"
                         >
                           รายละเอียด
                         </Link>
@@ -197,10 +202,10 @@ export default function HeadRequestsPage() {
                 {!filtered.length && (
                   <tr>
                     <td
-                      className="px-4 py-8 text-center text-gray-500"
+                      className="px-4 py-6 text-center text-gray-500"
                       colSpan={5}
                     >
-                      {loading ? "กำลังโหลดข้อมูล..." : "ไม่พบรายการ"}
+                      {loading ? "กำลังโหลด..." : "ไม่พบข้อมูล"}
                     </td>
                   </tr>
                 )}

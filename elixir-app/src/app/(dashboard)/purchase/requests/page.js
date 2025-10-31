@@ -1,42 +1,40 @@
-// src\app\(dashboard)\purchase\requests\page.js
-
+// src/app/(dashboard)/purchase/requests/page.js
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 
-const TH = {
-  Waiting: "กำลังดำเนินการ",
-  Approved: "ตอบรับคำขอ",
-  Rejected: "ปฏิเสธแล้ว",
-  Purchasing: "ดำเนินการจัดซื้อ",
-  Received: "ได้รับของแล้ว",
-  Completed: "เสร็จสิ้นแล้ว",
+// แมปสถานะ → ภาษาไทย + สี (ให้แสดงเหมือนหน้าอื่น ๆ)
+const STATUS_MAP = {
+  Waiting: { th: "กำลังดำเนินการ", className: "text-cyan-600" },
+  Approved: { th: "ตอบรับคำขอ", className: "text-green-600" },
+  Rejected: { th: "ปฏิเสธคำขอ", className: "text-red-600" },
+  Purchasing: { th: "ดำเนินการจัดซื้อ", className: "text-amber-600" },
+  Received: { th: "ได้รับของแล้ว", className: "text-amber-500" },
+  Completed: { th: "เสร็จสิ้นแล้ว", className: "text-gray-500" },
 };
+const STATUS_KEYS = Object.keys(STATUS_MAP);
 
 export default function PurchaseRequestsPage() {
   const [q, setQ] = useState("");
-  const [status, setStatus] = useState("ALL");
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // dropdown filter ของสถานะ (หลายค่า)
+  const [showFilter, setShowFilter] = useState(true);
+  const [checked, setChecked] = useState(() => new Set(STATUS_KEYS));
+
   const fetchData = async () => {
     setLoading(true);
-    const u = new URL("/api/requests", window.location.origin);
-    if (q) u.searchParams.set("q", q);
-    if (status !== "ALL") u.searchParams.set("status", status);
-
     try {
+      const u = new URL("/api/requests", window.location.origin);
+      if (q) u.searchParams.set("q", q);
+
       const res = await fetch(u.toString());
       const data = await res.json();
-      console.log("API data:", data);
 
-      if (Array.isArray(data)) {
-        setRows(data);
-      } else {
-        console.error("Unexpected response:", data);
-        setRows([]);
-      }
+      if (Array.isArray(data)) setRows(data);
+      else setRows([]);
     } catch (err) {
       console.error("fetch failed", err);
       setRows([]);
@@ -45,34 +43,33 @@ export default function PurchaseRequestsPage() {
     }
   };
 
-
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const badge = useMemo(
-    () => (st) => {
-      const base =
-        "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium";
-      switch (st) {
-        case "Approved":
-          return `${base} bg-blue-100 text-blue-800`;
-        case "Purchasing":
-          return `${base} bg-indigo-100 text-indigo-800`;
-        case "Received":
-          return `${base} bg-emerald-100 text-emerald-700`;
-        case "Completed":
-          return `${base} bg-gray-200 text-gray-700`;
-        case "Waiting":
-          return `${base} bg-yellow-100 text-yellow-800`;
-        case "Rejected":
-          return `${base} bg-red-100 text-red-700`;
-        default:
-          return base;
-      }
-    },
-    []
-  );
+  // กรองด้วยสถานะ + คำค้น (ฝั่ง client)
+  const filtered = useMemo(() => {
+    const qLower = q.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (!checked.has(r.R_Status)) return false;
+      if (!qLower) return true;
+      const hay = `${r.R_No ?? ""} ${r.HKName ?? r.HK_Username ?? ""} ${
+        r.R_Status ?? ""
+      }`.toLowerCase();
+      return hay.includes(qLower);
+    });
+  }, [rows, q, checked]);
+
+  // toggle checkbox ของสถานะ
+  const toggleStatus = (key) => {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -94,74 +91,105 @@ export default function PurchaseRequestsPage() {
           placeholder="ค้นหาจากเลขที่คำขอ/ชื่อผู้ขอ/ชื่อรายการ"
           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 placeholder:text-gray-400 focus:outline-none focus:border-[--color-primary] focus:ring-1 focus:ring-[--color-primary]"
         />
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[--color-primary]"
-        >
-          <option value="ALL">สถานะทั้งหมด</option>
-          <option value="Accepted">{TH.Approved}</option>
-          <option value="Purchasing">{TH.Purchasing}</option>
-          <option value="Received">{TH.Received}</option>
-          <option value="Completed">{TH.Completed}</option>
-          <option value="Waiting">{TH.Waiting}</option>
-          <option value="Rejected">{TH.Rejected}</option>
-        </select>
+
+        {/* Dropdown สถานะ (หลายค่า) */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowFilter((s) => !s)}
+            className="h-10 px-3 flex items-center justify-between bg-white border rounded-lg w-48"
+          >
+            <span className="text-gray-700 font-medium">สถานะ</span>
+            <span className="text-gray-500">{showFilter ? "▾" : "▸"}</span>
+          </button>
+
+          {showFilter && (
+            <div className="absolute z-50 mt-1 w-60 border rounded-lg shadow-lg bg-white">
+              {STATUS_KEYS.map((key) => {
+                const st = STATUS_MAP[key];
+                const isOn = checked.has(key);
+                return (
+                  <label
+                    key={key}
+                    className="w-full px-3 py-2 flex items-center gap-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isOn}
+                      onChange={() => toggleStatus(key)}
+                      className="size-4"
+                    />
+                    <span className={`text-base ${st.className}`}>{st.th}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="overflow-y-auto max-h-[600px] pr-[10px]">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-gray-600 sticky top-0">
-            <tr>
+            <tr className="border-b">
               <th className="text-left px-4 py-2">เลขที่คำขอ</th>
-              <th className="text-left px-4 py-2">ผู้ขอ</th>
               <th className="text-left px-4 py-2">วันที่สร้าง</th>
               <th className="text-left px-4 py-2">อัพเดตล่าสุด</th>
-              <th className="text-left px-4 py-2">สถานะ</th>
+              <th className="text-center px-4 py-2">สถานะ</th>
               <th className="text-center px-4 py-2">ดำเนินการ</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr key={r.R_No} className="border-t">
-                <td className="px-4 py-2">{r.R_No}</td>
-                <td className="px-4 py-2">{r.HKName}</td>
-                <td className="px-4 py-2">
-                  {new Date(r.R_DateTime).toLocaleString("th-TH", {
-                    second: "2-digit",
-                    minute: "2-digit",
-                    hour: "2-digit",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </td>
-                <td className="px-4 py-2">
-                  {new Date(r.R_LastModified).toLocaleString("th-TH", {
-                    second: "2-digit",
-                    minute: "2-digit",
-                    hour: "2-digit",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </td>
-                <td className="px-4 py-2">
-                  <span className={badge(r.R_Status)}>
-                    {TH[r.R_Status] || r.R_Status}
-                  </span>
-                </td>
-                <td className="px-4 py-2 text-center">
-                  <Link
-                    href={"/purchase/requests/" + r.R_No}
-                    className="text-[--color-primary] hover:underline"
+            {filtered.map((r) => {
+              const st = STATUS_MAP[r.R_Status] ?? {
+                th: r.R_Status ?? "-",
+                className: "text-gray-600",
+              };
+              return (
+                <tr key={r.R_No} className="border-t">
+                  <td className="px-4 py-2">{r.R_No}</td>
+                  <td className="px-4 py-2">
+                    {r.R_DateTime
+                      ? new Date(r.R_DateTime).toLocaleString("th-TH", {
+                          second: "2-digit",
+                          minute: "2-digit",
+                          hour: "2-digit",
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })
+                      : "-"}
+                  </td>
+                  <td className="px-4 py-2">
+                    {r.R_LastModified
+                      ? new Date(r.R_LastModified).toLocaleString("th-TH", {
+                          second: "2-digit",
+                          minute: "2-digit",
+                          hour: "2-digit",
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })
+                      : "-"}
+                  </td>
+                  <td
+                    className={`px-4 py-2 text-center font-medium ${st.className}`}
                   >
-                    รายละเอียด
-                  </Link>
-                </td>
-              </tr>
-            ))}
-            {!rows.length && (
+                    {st.th}
+                  </td>
+                  <td className="px-4 py-2 text-center">
+                    <Link
+                      href={`/purchase/requests/${r.R_No}`}
+                      className="text-[--color-primary] hover:underline"
+                    >
+                      รายละเอียด
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
+
+            {!filtered.length && (
               <tr>
                 <td className="px-4 py-6 text-center text-gray-500" colSpan={5}>
                   {loading ? "กำลังโหลด..." : "ไม่พบข้อมูล"}

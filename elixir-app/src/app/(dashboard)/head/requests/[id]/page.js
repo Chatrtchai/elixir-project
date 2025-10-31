@@ -129,12 +129,15 @@ export default function HeadRequestDetailAction() {
   return (
     <ModalWrapper title={`รายละเอียดคำขอ #${id}`} width={"w-[600px]"}>
       <div className="space-y-3 text-sm">
-        <ItemRow
+        <Row
           label="ผู้ขอ"
           value={data.HK_Fullname || data.HK_Username || "-"}
         />
-        <ItemRow label="สถานะ" value={TH[data.R_Status] || data.R_Status} />
-        <ItemRow
+        <Row
+          label="ผู้ขอ"
+          value={data.HK_Fullname || data.HK_Username || "-"}
+        />
+        <Row
           label="วันที่สร้าง"
           value={
             data.R_DateTime
@@ -149,7 +152,7 @@ export default function HeadRequestDetailAction() {
               : "-"
           }
         />
-        <ItemRow
+        <Row
           label="วันที่อัพเดตล่าสุด"
           value={
             data.R_LastModified
@@ -164,14 +167,26 @@ export default function HeadRequestDetailAction() {
               : "-"
           }
         />
-        <ItemRow
+        <Row label="สถานะ" value={TH[data.R_Status] || data.R_Status} />
+        <Row
           label="หัวหน้า"
           value={data.H_Fullname || data.H_Username || "-"}
         />
-        <ItemRow
+        <Row
           label="ผู้จัดซื้อ"
           value={data.PD_Fullname || data.PD_Username || "-"}
         />
+
+        <div className="pt-2">
+          <div className="text-gray-500 mb-1">รายการที่ขอ</div>
+          <ul className="list-disc list-inside space-y-1">
+            {(data.details || []).map((d) => (
+              <li key={d.RD_Id}>
+                {d.I_Name} x {d.RD_Amount}
+              </li>
+            ))}
+          </ul>
+        </div>
 
         <div>
           <div className="text-gray-500 mb-1">รายการที่ขอ</div>
@@ -275,7 +290,7 @@ export default function HeadRequestDetailAction() {
   );
 }
 
-function ItemRow({ label, value }) {
+function Row({ label, value }) {
   return (
     <div className="flex gap-2">
       <div className="w-40 text-gray-500">{label}:</div>

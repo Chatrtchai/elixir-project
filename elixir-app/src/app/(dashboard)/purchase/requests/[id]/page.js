@@ -117,7 +117,7 @@ export default function PurchaseRequestDetailPage() {
   if (!data) return null;
 
   return (
-    <ModalWrapper title={`รายละเอียดคำขอ #${id}`}>
+    <ModalWrapper title={`รายละเอียดคำขอ #${id}`} width={"w-[600px]"}>
       <div className="space-y-4">
         {err && (
           <div className="rounded-md bg-red-50 text-red-700 px-3 py-2 text-sm">
@@ -126,9 +126,12 @@ export default function PurchaseRequestDetailPage() {
         )}
 
         <div className="space-y-2 text-sm">
-          <Row label="สถานะ" value={TH[data.R_Status] || data.R_Status} />
           <Row
-            label="วันที่"
+            label="ผู้ขอ"
+            value={data.HK_Fullname || data.HK_Username || "-"}
+          />
+          <Row
+            label="วันที่สร้าง"
             value={
               data.R_DateTime
                 ? new Date(data.R_DateTime).toLocaleString("th-TH", {
@@ -143,24 +146,35 @@ export default function PurchaseRequestDetailPage() {
             }
           />
           <Row
-            label="ผู้ขอ"
-            value={data.HK_Fullname || data.HKName || data.HK_Username || "-"}
+            label="วันที่อัพเดตล่าสุด"
+            value={
+              data.R_LastModified
+                ? new Date(data.R_LastModified).toLocaleString("th-TH", {
+                    second: "2-digit",
+                    minute: "2-digit",
+                    hour: "2-digit",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })
+                : "-"
+            }
           />
+          <Row label="สถานะ" value={TH[data.R_Status] || data.R_Status} />
           <Row
             label="หัวหน้า"
-            value={data.H_Fullname || data.HeadName || data.H_Username || "-"}
+            value={data.H_Fullname || data.H_Username || "-"}
           />
           <Row
-            label="มอบหมาย"
-            value={data.PD_Fullname || data.PDName || data.PD_Username || "-"}
+            label="ผู้จัดซื้อ"
+            value={data.PD_Fullname || data.PD_Username || "-"}
           />
-
           <div className="pt-2">
             <div className="text-gray-500 mb-1">รายการที่ขอ</div>
             <ul className="list-disc list-inside space-y-1">
               {(data.details || []).map((d) => (
                 <li key={d.RD_Id}>
-                  {d.I_Name} × {d.RD_Amount}
+                  {d.I_Name} x {d.RD_Amount}
                 </li>
               ))}
             </ul>

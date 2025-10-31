@@ -146,7 +146,7 @@ export default function HKInventoryPage() {
           <thead className="bg-gray-50 text-gray-600 sticky top-0">
             <tr>
               {/* <th className="text-left px-4 py-2">รหัส</th> */}
-              <th className="text-left px-4 py-2">รายการ</th>
+              <th className="text-left px-4 py-2">ชื่อรายการ</th>
               <th className="text-right px-4 py-2">คงเหลือ</th>
             </tr>
           </thead>

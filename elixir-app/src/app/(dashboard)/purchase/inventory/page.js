@@ -40,15 +40,15 @@ export default function PurchaseInventoryPage() {
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-gray-600">
             <tr>
-              <th className="text-left px-4 py-2">รหัส</th>
-              <th className="text-left px-4 py-2">รายการ</th>
+              {/* <th className="text-left px-4 py-2">รหัส</th> */}
+              <th className="text-left px-4 py-2">ชื่อรายการ</th>
               <th className="text-left px-4 py-2">คงเหลือ</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.I_Id} className="border-t">
-                <td className="px-4 py-2">{r.I_Id}</td>
+                {/* <td className="px-4 py-2">{r.I_Id}</td> */}
                 <td className="px-4 py-2">{r.I_Name}</td>
                 <td className="px-4 py-2">{r.I_Quantity}</td>
               </tr>

@@ -189,7 +189,7 @@ export default function HeadRequestsPage() {
                       </td>
                       <td className="px-4 py-2 text-center">
                         <Link
-                          href={`/purchase/requests/${r.R_No}`}
+                          href={`/head/requests/${r.R_No}`}
                           className="text-[--color-primary] hover:underline"
                         >
                           รายละเอียด

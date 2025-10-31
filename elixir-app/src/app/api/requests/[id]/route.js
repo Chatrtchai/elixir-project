@@ -253,6 +253,11 @@ export async function PATCH(req, { params }) {
     );
     const T_No = txResult.insertId; // หมายเลข Transaction ที่เพิ่งสร้าง
 
+    const [details] = await conn.execute(
+      `SELECT I_Id, RD_Amount FROM Request_Detail WHERE R_No=?`,
+      [id]
+    );
+
     // ✅ ดึงรายละเอียดรายการของที่ได้รับ
     for (const d of details) {
       // ดึงจำนวนของปัจจุบันในคลัง

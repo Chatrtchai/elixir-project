@@ -134,10 +134,6 @@ export default function HeadRequestDetailAction() {
           value={data.HK_Fullname || data.HK_Username || "-"}
         />
         <Row
-          label="ผู้ขอ"
-          value={data.HK_Fullname || data.HK_Username || "-"}
-        />
-        <Row
           label="วันที่สร้าง"
           value={
             data.R_DateTime
@@ -183,17 +179,6 @@ export default function HeadRequestDetailAction() {
             {(data.details || []).map((d) => (
               <li key={d.RD_Id}>
                 {d.I_Name} x {d.RD_Amount}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <div className="text-gray-500 mb-1">รายการที่ขอ</div>
-          <ul className="list-disc list-inside space-y-1">
-            {(data.details || []).map((d) => (
-              <li key={d.RD_Id}>
-                {d.I_Name} × {d.RD_Amount}
               </li>
             ))}
           </ul>

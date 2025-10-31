@@ -246,6 +246,30 @@ export async function PATCH(req, { params }) {
       [note, id, session.sub]
     );
 
+    // ✅ สร้าง Transaction ใหม่เมื่อรับของเข้าคลัง
+    const [txResult] = await conn.execute(
+      `INSERT INTO Transaction (T_DateTime, T_Note, HK_Username) VALUES (NOW(), ?, ?)`,
+      [`ได้รับของตามรายการคำขอที่ #${id}`, session.sub]
+    );
+    const T_No = txResult.insertId; // หมายเลข Transaction ที่เพิ่งสร้าง
+
+    // ✅ ดึงรายละเอียดรายการของที่ได้รับ
+    for (const d of details) {
+      // ดึงจำนวนของปัจจุบันในคลัง
+      const [[item]] = await conn.execute(
+        `SELECT I_Quantity FROM Item WHERE I_Id = ?`,
+        [d.I_Id]
+      );
+
+      const totalLeft = item?.I_Quantity ?? 0; // จำนวนล่าสุดหลังอัปเดตแล้ว
+
+      // ✅ บันทึกรายการลง Transaction_Detail
+      await conn.execute(
+        `INSERT INTO Transaction_Detail (TD_Amount_Changed, TD_Total_Left, T_No, I_Id) VALUES (?, ?, ?, ?)`,
+        [d.RD_Amount, totalLeft, T_No, d.I_Id]
+      );
+    }
+
     await conn.commit();
     await conn.end();
     return NextResponse.json({ ok: true, R_No: id, R_Status: nextStatus });

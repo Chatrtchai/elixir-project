@@ -24,7 +24,7 @@ export default function HKPurchaseRequestsPage() {
   const [error, setError] = useState(""); // แก้บั๊ก setError ที่ใช้ในเดิม
 
   // dropdown filter เหมือนหน้า Head
- const [showFilter, setShowFilter] = useState(true);
+ const [showFilter, setShowFilter] = useState(false);
  const [checked, setChecked] = useState(() => new Set(STATUS_KEYS));
 
 

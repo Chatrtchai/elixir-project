@@ -169,11 +169,7 @@ export default function AddItemPage() {
                 : "bg-green-600 hover:bg-green-700"
             }`}
             title={
-              !isNameValid
-                ? "กรุณากรอกชื่อของ"
-                : !isQtyValid
-                ? "จำนวนต้องเป็น 1 ถึง 1000"
-                : undefined
+              !isNameValid ? "กรุณากรอกชื่อของ" : !isQtyValid ? "จำนวนต้องเป็น 1 ถึง 1000" : undefined
             }
           >
             {loading ? "กำลังเพิ่ม..." : "เพิ่มของ"}

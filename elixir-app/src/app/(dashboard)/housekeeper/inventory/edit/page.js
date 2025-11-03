@@ -9,7 +9,7 @@ const isInt = (v) => /^-?\d+$/.test(String(v).trim());
 const clampNonNegativeInt = (v) => {
   if (!isInt(v)) return 0;
   const n = parseInt(v, 10);
-  return n < 0 ? 0 : n;
+  return Math.max(n, 0);
 };
 
 export default function HKInventoryBulkEditPage() {
@@ -131,7 +131,6 @@ export default function HKInventoryBulkEditPage() {
 
     try {
       setSaving(true);
-
       const bulkRes = await fetch("/api/items/bulk", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -149,6 +148,7 @@ export default function HKInventoryBulkEditPage() {
       alert("บันทึกสำเร็จ");
       await fetchAll(); // รีโหลดข้อมูลจากฐานข้อมูลให้ตรง
       setNote(""); // เคลียร์โน้ตหลังบันทึก
+      router.back();
     } catch (e) {
       console.error("saveAll failed", e);
       alert("บันทึกไม่สำเร็จ: " + (e?.message || "เกิดข้อผิดพลาด"));
@@ -252,6 +252,9 @@ export default function HKInventoryBulkEditPage() {
               const dQtyRaw = draftQty[r.I_Id] ?? currentQty;
               const dQty = String(dQtyRaw);
               const err = errors[r.I_Id] || {};
+              
+              {/* console.log(r.I_Name, currentQty, dQty); */}
+
               return (
                 <tr key={`edit-${r.I_Id}`} className="border-t align-top">
                   {/* ชื่อรายการ (อ่านอย่างเดียว) */}
@@ -270,15 +273,30 @@ export default function HKInventoryBulkEditPage() {
                   <td className="px-4 py-2 text-right">
                     <div className="flex items-center justify-end">
                       <input
+                        type="number"
                         inputMode="numeric"
+                        min={0}
+                        max={currentQty + 1000}
                         value={dQty}
-                        onChange={(e) => setQty(r.I_Id, e.target.value)}
-                        onBlur={(e) =>
-                          setQty(
-                            r.I_Id,
-                            String(clampNonNegativeInt(e.target.value))
-                          )
-                        }
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          // กรองให้พิมพ์ได้เฉพาะตัวเลข
+                          val = val.replace(/[^\d]/g, "");
+                          const n = parseInt(val || "0", 10);
+
+                          // จำกัดค่าไม่ให้เกิน currentQty + 1000
+                          if (n > currentQty + 1000) {
+                            setQty(r.I_Id, currentQty + 1000);
+                          } else {
+                            setQty(r.I_Id, n);
+                          }
+                        }}
+                        onBlur={(e) => {
+                          // บังคับ clamp อีกครั้งเมื่อ blur
+                          let n = clampNonNegativeInt(e.target.value);
+                          if (n > currentQty + 1000) n = currentQty + 1000;
+                          setQty(r.I_Id, String(n));
+                        }}
                         className={`w-32 rounded-md border px-2 py-1 text-right focus:outline-none focus:ring-1 ${
                           err.qty
                             ? "border-red-400 focus:ring-red-400"

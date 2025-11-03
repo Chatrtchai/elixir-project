@@ -204,6 +204,7 @@ export async function PATCH(req, { params }) {
         [nextStatus, session.sub, id]
       );
     } else if (action === "markcompleted") {
+      
       if (cur.R_Status !== "Received") {
         await conn.rollback();
         await conn.end();
@@ -212,17 +213,22 @@ export async function PATCH(req, { params }) {
           { status: 409 }
         );
       }
-      nextStatus = "Completed";
-      note = isHK
+
+      const isHK = String(session.role || "")
+        .toUpperCase()
+        .includes("HOUSEKEEPER");
+      const nextStatus = "Completed";
+      const note = isHK
         ? "แม่บ้านยืนยันเสร็จสิ้น รับของเข้าคลังแล้ว"
         : "ฝ่ายจัดซื้อยืนยันเสร็จสิ้น รับของเข้าคลังแล้ว";
 
+      // อัปเดตสถานะใบคำขอ
       await conn.execute(
         `UPDATE Request SET R_Status=?, R_LastModified=NOW() WHERE R_No=?`,
         [nextStatus, id]
       );
 
-      // อัปเดตสต็อกเมื่อเสร็จสิ้น
+      // อัปเดตสต็อกตามรายการในคำขอ
       const [details] = await conn.execute(
         `SELECT I_Id, RD_Amount FROM Request_Detail WHERE R_No=?`,
         [id]
@@ -233,6 +239,39 @@ export async function PATCH(req, { params }) {
           [d.RD_Amount, d.I_Id]
         );
       }
+
+      // ✅ สร้าง Transaction เฉพาะเมื่อ Completed เท่านั้น
+      const [txResult] = await conn.execute(
+        `INSERT INTO Transaction (T_DateTime, T_Note, HK_Username) VALUES (NOW(), ?, ?)`,
+        [`ได้รับของตามรายการคำขอที่ #${id}`, session.sub]
+      );
+      const T_No = txResult.insertId;
+
+      // บันทึกรายการ Transaction_Detail หลังอัปเดตสต็อกแล้ว
+      for (const d of details) {
+        const [[item]] = await conn.execute(
+          `SELECT I_Quantity FROM Item WHERE I_Id = ?`,
+          [d.I_Id]
+        );
+        const totalLeft = item?.I_Quantity ?? 0;
+
+        await conn.execute(
+          `INSERT INTO Transaction_Detail (TD_Amount_Changed, TD_Total_Left, T_No, I_Id)
+       VALUES (?, ?, ?, ?)`,
+          [d.RD_Amount, totalLeft, T_No, d.I_Id]
+        );
+      }
+
+      // บันทึกประวัติการเปลี่ยนสถานะ (Request_Transaction)
+      await conn.execute(
+        `INSERT INTO Request_Transaction (RT_DateTime, RT_Note, R_No, Username)
+     VALUES (NOW(), ?, ?, ?)`,
+        [note, id, session.sub]
+      );
+
+      await conn.commit();
+      await conn.end();
+      return NextResponse.json({ ok: true, R_No: id, R_Status: nextStatus });
     } else {
       await conn.rollback();
       await conn.end();
@@ -245,13 +284,6 @@ export async function PATCH(req, { params }) {
        VALUES (NOW(), ?, ?, ?)`,
       [note, id, session.sub]
     );
-
-    // ✅ สร้าง Transaction ใหม่เมื่อรับของเข้าคลัง
-    const [txResult] = await conn.execute(
-      `INSERT INTO Transaction (T_DateTime, T_Note, HK_Username) VALUES (NOW(), ?, ?)`,
-      [`ได้รับของตามรายการคำขอที่ #${id}`, session.sub]
-    );
-    const T_No = txResult.insertId; // หมายเลข Transaction ที่เพิ่งสร้าง
 
     const [details] = await conn.execute(
       `SELECT I_Id, RD_Amount FROM Request_Detail WHERE R_No=?`,

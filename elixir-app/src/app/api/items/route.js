@@ -70,7 +70,10 @@ export async function POST(req) {
     return NextResponse.json({ success: true, I_Id: newId });
   } catch (e) {
     console.error("POST /api/items error:", e);
-    return NextResponse.json({ error: "server error" }, { status: 500 });
+    if (e.code == "ER_DUP_ENTRY") {
+      return NextResponse.json({ error: "สินค้าชื่อดังกล่าวอยู่แล้วภายในคลัง" }, { status: 400 });
+    }
+      return NextResponse.json({ error: "server error" }, { status: 500 });
   } finally {
     await conn.end();
   }

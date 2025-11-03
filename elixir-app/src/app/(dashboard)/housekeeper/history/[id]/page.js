@@ -60,6 +60,7 @@ export default function HKHistoryDetailModalPage() {
     <ModalWrapper
       open
       title={`${title} (#${id})`}
+      width={"w-[600px]"}
       onClose={() => router.back()}
     >
       {loading ? (
@@ -133,11 +134,19 @@ export default function HKHistoryDetailModalPage() {
                   <thead className="bg-gray-50 text-gray-600 sticky top-0">
                     <tr>
                       <Th>รายการ</Th>
+
                       {data.note === "เบิกของ" && <Th>จำนวนที่เบิก</Th>}
                       {data.note === "คืนของ" && <Th>จำนวนที่คืน</Th>}
+
+                      {/* กรณีอื่น (เช่น bulk update) */}
+                      {data.note !== "เบิกของ" && data.note !== "คืนของ" && (
+                        <Th>จำนวนที่เพิ่ม/ลด</Th>
+                      )}
+
                       <Th>จำนวนคงเหลือ (หลังทำรายการ)</Th>
                     </tr>
                   </thead>
+
                   <tbody>
                     {lines.map((r, idx) => (
                       <tr

@@ -61,10 +61,8 @@ export default function WithdrawReturnModal() {
         if (!Number.isFinite(val) || val < 0) {
           throw new Error(`จำนวนคืนของ "${r.item}" ไม่ถูกต้อง`);
         }
-        if (val > r.withdrawn) {
-          throw new Error(
-            `จำนวนคืนของ "${r.item}" เกินคงเหลือที่คืนได้ (${r.withdrawn})`
-          );
+        if (val > 1000) {
+          throw new Error(`จำนวนคืนของ "${r.item}" ต้องไม่เกิน 1000`);
         }
       }
 
@@ -159,48 +157,46 @@ export default function WithdrawReturnModal() {
 
                 return (
                   <tr key={d.WD_Id} className="odd:bg-white even:bg-gray-50">
-                    <td className="px-3 py-2 align-top">
+                    <td className="px-3 py-2">
                       <div className="font-medium text-gray-800">
                         {d.I_Name}
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-center align-top">
+                    <td className="px-3 py-2 text-center">
                       {withdrawn}
                     </td>
-                    <td className="px-3 py-2 text-center align-top">
+                    <td className="px-3 py-2 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <input
                           type="number"
                           min="0"
-                          max={withdrawn}
+                          max="1000"
                           inputMode="numeric"
                           value={amountStr}
                           onChange={(e) => {
+                            let n = Number(e.target.value);
+                            if (!Number.isFinite(n) || n < 0) n = 0;
+                            if (n > 1000) n = 1000;
+
                             const cp = [...returns];
                             cp[idx] = cp[idx] || {
                               detailId: d.WD_Id,
                               itemId: d.I_Id,
                               amount: "",
-                              // max,
                               item: d.I_Name,
                               withdrawn,
                             };
-                            cp[idx].amount = e.target.value;
+                            cp[idx].amount = String(n);
                             setReturns(cp);
                           }}
-                          className={`w-28 rounded-md border px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] text-center
-                            ${
-                              over || invalid
-                                ? "border-red-400"
-                                : "border-gray-300"
-                            }`}
+                          className={`w-28 rounded-md border px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] text-center ${
+                            invalid ? "border-red-400" : "border-gray-300"
+                          }`}
                         />
                       </div>
-                      {(over || invalid) && (
+                      {invalid && (
                         <div className="text-xs text-red-600 mt-1">
-                          {invalid
-                            ? "กรุณาใส่จำนวนที่ถูกต้อง"
-                            : `เกินคงเหลือที่คืนได้ (${withdrawn})`}
+                          กรุณาใส่จำนวนที่ถูกต้อง (0–1000)
                         </div>
                       )}
                     </td>

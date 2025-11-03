@@ -118,14 +118,16 @@ export default function HKRequestDetailModal() {
         />
 
         <div className="pt-2">
-          <div className="text-gray-500 mb-1">รายการที่ขอ</div>
-          <ul className="list-disc list-inside space-y-1">
-            {(data.details || []).map((d) => (
-              <li key={d.RD_Id}>
-                {d.I_Name} x {d.RD_Amount}
-              </li>
-            ))}
-          </ul>
+          <div className="text-gray-500 mb-1 border-b">รายการที่ขอ</div>
+          <div className="overflow-y-auto h-[100px]">
+            <ul className="list-disc list-inside space-y-1">
+              {(data.details || []).map((d) => (
+                <li key={d.RD_Id}>
+                  {d.I_Name} x {d.RD_Amount}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
 

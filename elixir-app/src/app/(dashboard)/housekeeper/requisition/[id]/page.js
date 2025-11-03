@@ -56,7 +56,9 @@ export default function WithdrawDetailModal() {
         />
 
         <div>
-          <div className="text-gray-600 mb-1 font-medium">รายละเอียด</div>
+          <div className="text-gray-600 mb-1 font-medium">
+            รายละเอียด (เบิก)
+          </div>
           <ul className="list-disc list-inside space-y-1">
             {(data.details || []).map((d) => {
               const returnedAll = d.WD_Return_Left === d.WD_Amount;
@@ -67,22 +69,10 @@ export default function WithdrawDetailModal() {
               return (
                 <li key={d.WD_Id}>
                   {d.I_Name} — เบิก {d.WD_Amount} ชิ้น
-                  {returnedSome && (
-                    <span className="text-gray-500">
-                      {" "}
-                      (คืน {d.WD_Return_Left})
-                    </span>
-                  )}
-                  {returnedAll && (
-                    <span className="text-emerald-500"> (คืนครบ)</span>
-                  )}
-                  {returnedNone && <span className="text-red-500"> (หมด)</span>}
                   <ul className="list-disc list-inside ml-5 mt-1">
                     <li>
-                      จำนวนของในคลัง (ปัจจุบัน){" "}
-                      {data.WL_Is_Finished === 1
-                        ? d.WD_After_Return_Amount // ✅ ถ้าคืนครบแล้ว
-                        : d.WD_Amount_Left}
+                      จำนวนของในคลัง (หลังเบิก){" "}
+                      {d.WD_Amount_Left}
                       {" ชิ้น"}
                     </li>
                   </ul>
@@ -90,6 +80,42 @@ export default function WithdrawDetailModal() {
               );
             })}
           </ul>
+
+          {data.WL_Is_Finished === 1 && (
+          <><div className="text-gray-600 mb-1 font-medium mt-2">
+              รายละเอียด (คืนของ)
+            </div><ul className="list-disc list-inside space-y-1">
+                {(data.details || []).map((d) => {
+                  const returnedAll = d.WD_Return_Left === d.WD_Amount;
+                  const returnedNone = d.WD_Return_Left === 0 && Number(data.WL_Is_Finished) === 1;
+                  const returnedSome = d.WD_Return_Left > 0 && !returnedAll;
+
+                  return (
+                    <li key={d.WD_Id}>
+                      {d.I_Name} — 
+                      {returnedSome && (
+                        <span className="text-gray-500">
+                          {" "}
+                          คืน {d.WD_Return_Left}
+                        </span>
+                      )}
+                      {returnedAll && (
+                        <span className="text-emerald-500"> (คืนครบ)</span>
+                      )}
+                      {returnedNone && <span className="text-red-500"> (หมด)</span>}
+                      <ul className="list-disc list-inside ml-5 mt-1">
+                        <li>
+                          จำนวนของในคลัง (หลังคืน){" "}
+                          {d.WD_After_Return_Amount}
+                          {" ชิ้น"}
+                        </li>
+                      </ul>
+                    </li>
+                  );
+                })}
+              </ul></>
+          )}
+
         </div>
       </div>
       <div className="flex justify-end gap-3">

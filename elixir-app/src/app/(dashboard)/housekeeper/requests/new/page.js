@@ -104,13 +104,6 @@ export default function NewHKRequestModal() {
       if (seen.has(k)) return true;
       seen.add(k);
     }
-    // จำนวน 0–1000 และตอนส่งต้อง > 0
-    for (let i = 0; i < lines.length; i++) {
-      const n = Number(lines[i].amount ?? "");
-      if (!Number.isFinite(n) || n <= 0) return true;
-      if (n > 1000) return true;
-    }
-    return false;
   }, [lines, headUsername]);
 
   // เพิ่มจากปุ่ม “เพิ่มรายการ” (เลือกจาก dropdown)
@@ -183,7 +176,7 @@ export default function NewHKRequestModal() {
   };
 
   return (
-    <ModalWrapper title="สร้างคำขอสั่งซื้อ" width="max-w-[768px]">
+    <ModalWrapper title="สร้างคำขอสั่งซื้อ" width="w-[600px]">
       {/* กล่อง modal: สไตล์เดียวกับ requisition/new/page.js */}
       <form
         onSubmit={save}
@@ -282,7 +275,7 @@ export default function NewHKRequestModal() {
             <div className="px-[5px] hidden sm:flex items-center text-sm text-gray-500 font-medium">
               <div className="flex-1">รายการ</div>
               <div className="flex-1 text-center">จำนวนคงเหลือ</div>
-              <div className="flex-1 text-center">จำนวนที่ขอเพิ่ม (0–1000)</div>
+              <div className="flex-1 text-center">จำนวนที่ขอเพิ่ม (1–1000)</div>
               <div className="flex-1 text-center">ดำเนินการ</div>
             </div>
 
@@ -328,17 +321,23 @@ export default function NewHKRequestModal() {
                         </div>
                         <input
                           type="number"
-                          min="0"
+                          min="1"
                           max="1000"
                           value={l.amount}
                           onChange={(e) => {
+
                             const cp = [...lines];
+
                             let n = Number(e.target.value);
-                            if (!Number.isFinite(n) || n < 0) n = 0;
-                            if (n > 1000) n = 1000;
-                            const maxNow = Number(remainingForLine(i));
-                            if (Number.isFinite(maxNow) && n > maxNow)
-                              n = maxNow;
+
+                            if (!Number.isFinite(n) || n < 0) { 
+                              n = 1; 
+                            }
+        
+                            if (n > 1000) {
+                              n = 1000;
+                            }
+
                             cp[i].amount = n;
                             setLines(cp);
                           }}

@@ -21,7 +21,7 @@ export default function PurchaseRequestsPage() {
   const [loading, setLoading] = useState(false);
 
   // dropdown filter ของสถานะ (หลายค่า)
-  const [showFilter, setShowFilter] = useState(true);
+  const [showFilter, setShowFilter] = useState(false);
   const [checked, setChecked] = useState(() => new Set(STATUS_KEYS));
 
   const fetchData = async () => {

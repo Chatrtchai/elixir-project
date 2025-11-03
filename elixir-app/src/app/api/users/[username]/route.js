@@ -65,7 +65,7 @@ export async function PATCH(req, { params }) {
       const hash = isHash
         ? body.password
         : await bcrypt.hash(String(body.password), 10);
-      set.push("PasswordHash=?");
+      set.push("Password=?");
       values.push(hash);
     }
 
@@ -100,7 +100,6 @@ export async function PATCH(req, { params }) {
     return jsonError("Internal Server Error", 500);
   }
 }
-
 
 export async function DELETE(_req, { params }) {
   const username = params?.username;

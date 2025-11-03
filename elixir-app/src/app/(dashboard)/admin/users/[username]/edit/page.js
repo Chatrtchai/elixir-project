@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import ModalWrapper from "@/components/modal/ModalWrapper";
 import { useParams, useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react"; // 👈 เพิ่ม icon สำหรับแสดง/ซ่อนรหัสผ่าน
 
 export default function UserEditModal() {
   const params = useParams();
@@ -12,12 +13,13 @@ export default function UserEditModal() {
   const router = useRouter();
 
   const [form, setForm] = useState({
-    username: currentUsername, // ✅ มี username ใน form
+    username: currentUsername,
     fullName: "",
     role: "ADMIN",
     password: "",
   });
   const [err, setErr] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // 👈 toggle password
 
   // โหลดข้อมูลผู้ใช้
   useEffect(() => {
@@ -42,12 +44,39 @@ export default function UserEditModal() {
     })();
   }, [currentUsername]);
 
+  // ✅ ตรวจสอบความถูกต้องก่อนบันทึก
+  const validateForm = () => {
+    if (!form.fullName || !form.role) {
+      setErr("กรุณากรอกข้อมูลให้ครบทุกช่อง");
+      return false;
+    }
+
+    // ตรวจสอบ username (ถึงแม้จะ disabled ก็กันไว้)
+    const usernameRegex = /^[a-z0-9_-]+$/;
+    if (!usernameRegex.test(form.username)) {
+      setErr(
+        "ชื่อผู้ใช้ต้องเป็นภาษาอังกฤษตัวพิมพ์เล็ก และใช้ได้เฉพาะ a-z, 0-9, _ และ - เท่านั้น"
+      );
+      return false;
+    }
+
+    // ตรวจสอบ password ถ้ามีกรอกใหม่
+    if (form.password && form.password.length < 6) {
+      setErr("รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
+      return false;
+    }
+
+    return true;
+  };
+
   const save = async (e) => {
     e.preventDefault();
     setErr("");
 
+    if (!validateForm()) return;
+
     const payload = {
-      username: form.username, // ✅ ส่ง username ใหม่
+      username: form.username,
       fullName: form.fullName,
       role: form.role,
     };
@@ -66,7 +95,6 @@ export default function UserEditModal() {
         return;
       }
 
-      // ✅ ถ้า username เปลี่ยน ให้กลับไปหน้า list ใหม่
       if (form.username !== currentUsername) {
         router.push(`/admin/users/${form.username}/edit`);
         router.back();
@@ -83,7 +111,7 @@ export default function UserEditModal() {
   return (
     <ModalWrapper title="แก้ไขข้อมูลผู้ใช้" width={"w-[600px]"}>
       <form onSubmit={save} className="space-y-4">
-        {/* ✅ username editable */}
+        {/* username */}
         <div>
           <label className="block text-sm font-medium mb-1">ชื่อผู้ใช้</label>
           <input
@@ -94,6 +122,7 @@ export default function UserEditModal() {
           />
         </div>
 
+        {/* fullName */}
         <div>
           <label className="block text-sm font-medium mb-1">ชื่อ-สกุล</label>
           <input
@@ -104,6 +133,7 @@ export default function UserEditModal() {
           />
         </div>
 
+        {/* role */}
         <div>
           <label className="block text-sm font-medium mb-1">บทบาท</label>
           <select
@@ -118,21 +148,33 @@ export default function UserEditModal() {
           </select>
         </div>
 
+        {/* password */}
         <div>
           <label className="block text-sm font-medium mb-1">
             เปลี่ยนรหัสผ่าน (ถ้าต้องการ)
           </label>
-          <input
-            type="password"
-            placeholder="ใส่รหัสใหม่ หรือเว้นว่าง"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[--color-primary]"
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="ใส่รหัสใหม่ หรือเว้นว่าง"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 pr-10 focus:outline-none focus:ring-1 focus:ring-[--color-primary]"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[--color-primary]"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
         </div>
 
+        {/* error message */}
         {err && <p className="text-sm text-red-600">{err}</p>}
 
+        {/* buttons */}
         <div className="flex justify-end gap-3">
           <button
             type="submit"
@@ -142,6 +184,7 @@ export default function UserEditModal() {
           </button>
           <button
             onClick={() => router.back()}
+            type="button"
             className="px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 cursor-pointer"
           >
             ปิดหน้าต่าง

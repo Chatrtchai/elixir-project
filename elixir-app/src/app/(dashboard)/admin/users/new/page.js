@@ -1,9 +1,8 @@
-// src\app\(dashboard)\admin\users\new\page.js
-
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ModalWrapper from "@/components/modal/ModalWrapper";
+import { Eye, EyeOff } from "lucide-react"; // 👈 ใช้ไอคอนจาก lucide-react
 
 export default function NewUserModal() {
   const router = useRouter();
@@ -14,10 +13,38 @@ export default function NewUserModal() {
     role: "ADMIN",
   });
   const [err, setErr] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // 👈 สถานะเปิด/ปิดตา
+
+  const validateForm = () => {
+    if (!form.username || !form.password || !form.fullName) {
+      setErr("กรุณากรอกข้อมูลให้ครบทุกช่อง");
+      return false;
+    }
+
+    const usernameRegex = /^[a-z0-9_-]+$/;
+    if (!usernameRegex.test(form.username)) {
+      setErr(
+        "ชื่อผู้ใช้ต้องเป็นภาษาอังกฤษตัวพิมพ์เล็ก และใช้ได้เฉพาะ a-z, 0-9, _ และ - เท่านั้น"
+      );
+      return false;
+    }
+
+    if ((form.username).length >= 4) {
+      setErr(
+        "ความยาวอย่างน้อย 4 ตัวอักษร"
+      );
+      return false;
+    }
+
+    return true;
+  };
 
   const save = async (e) => {
     e.preventDefault();
     setErr("");
+
+    if (!validateForm()) return;
+
     const res = await fetch("/api/users", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -25,6 +52,7 @@ export default function NewUserModal() {
     });
     const data = await res.json();
     if (!res.ok) return setErr(data.error || "บันทึกไม่สำเร็จ");
+
     router.back();
     router.refresh();
   };
@@ -32,6 +60,7 @@ export default function NewUserModal() {
   return (
     <ModalWrapper title="เพิ่มบัญชีผู้ใช้งาน" width={"w-[600px]"}>
       <form onSubmit={save} className="space-y-4">
+        {/* username */}
         <div>
           <label className="block text-sm font-medium mb-1">
             ชื่อผู้ใช้ (ภาษาอังกฤษ)
@@ -43,18 +72,31 @@ export default function NewUserModal() {
             required
           />
         </div>
+
+        {/* password */}
         <div>
           <label className="block text-sm font-medium mb-1">
             รหัสผ่าน (เริ่มต้น)
           </label>
-          <input
-            type="password"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[--color-primary]"
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-            required
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 pr-10 focus:outline-none focus:ring-1 focus:ring-[--color-primary]"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
         </div>
+
+        {/* full name */}
         <div>
           <label className="block text-sm font-medium mb-1">ชื่อ-สกุล</label>
           <input
@@ -64,6 +106,8 @@ export default function NewUserModal() {
             required
           />
         </div>
+
+        {/* role */}
         <div>
           <label className="block text-sm font-medium mb-1">บทบาท</label>
           <select
@@ -77,7 +121,11 @@ export default function NewUserModal() {
             <option value="PURCHASING DEPARTMENT">พนักงานแผนกจัดซื้อ</option>
           </select>
         </div>
+
+        {/* error */}
         {err && <p className="text-sm text-red-600">{err}</p>}
+
+        {/* buttons */}
         <div className="flex justify-end gap-3">
           <button
             type="submit"
@@ -87,6 +135,7 @@ export default function NewUserModal() {
           </button>
           <button
             onClick={() => router.back()}
+            type="button"
             className="px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 cursor-pointer"
           >
             ปิดหน้าต่าง

@@ -78,6 +78,11 @@ export default function DashboardLayout({ children }) {
       ],
       HOUSEKEEPER: [
         {
+          href: "/housekeeper/inventory",
+          label: "รายการของทั้งหมด",
+          icon: "inventory_2",
+        },
+        {
           href: "/housekeeper/requisition",
           label: "รายการเบิกของ",
           icon: "assignment_return",
@@ -86,11 +91,6 @@ export default function DashboardLayout({ children }) {
           href: "/housekeeper/requests",
           label: "รายการคำขอจัดซื้อ",
           icon: "shopping_bag",
-        },
-        {
-          href: "/housekeeper/inventory",
-          label: "รายการของทั้งหมด",
-          icon: "inventory_2",
         },
         {
           href: "/housekeeper/history",

@@ -7,7 +7,7 @@ const COOKIE_NAME = "session";
 const ROLE_HOME = {
   ADMIN: "/admin/users",
   HEAD: "/head/requests",
-  HOUSEKEEPER: "/housekeeper/requisition",
+  HOUSEKEEPER: "/housekeeper/inventory",
   "PURCHASING DEPARTMENT": "/purchase/requests",
 };
 

@@ -134,8 +134,8 @@ export default function NewHKRequestModal() {
 
     // ตรวจซ้ำก่อนส่ง
     const seen = new Set();
-    for (let i = 0; i < lines.length; i++) {
-      const l = lines[i];
+    for (const element of lines) {
+      const l = element;
       if (!l.itemId) return setErr("กรุณาเลือกรายการให้ครบถ้วน");
       const k = String(l.itemId);
       if (seen.has(k)) return setErr("ไม่สามารถเลือกรายการซ้ำในหลายแถวได้");
@@ -144,7 +144,6 @@ export default function NewHKRequestModal() {
       let n = Number(l.amount ?? "");
       if (!Number.isFinite(n) || n <= 0) return setErr("จำนวนต้องมากกว่า 0");
       if (n > 1000) n = 1000; // clamp ฝั่ง client
-      if (n > remainingForLine(i)) return setErr("จำนวนที่ขอเพิ่มเกินคงเหลือ");
     }
 
     const payload = {

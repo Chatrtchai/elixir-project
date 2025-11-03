@@ -271,7 +271,7 @@ export async function PATCH(req, { params }) {
 
       await conn.commit();
       await conn.end();
-      return NextResponse.json({ ok: true, R_No: id, R_Status: nextStatus });
+      return NextResponse.json({ ok: true, R_No: id, R_Status: nextStatus, T_No });
     } else {
       await conn.rollback();
       await conn.end();

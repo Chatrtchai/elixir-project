@@ -72,8 +72,6 @@ export async function GET(_req, { params }) {
   }
 }
 
-// PATCH /api/requests/:id
-// body: { action: "approve" | "reject" | "startPurchasing" | "markReceived" | "markCompleted", pdDept? }
 export async function PATCH(req, { params }) {
   const session = await readSession(req).catch(() => null);
   if (!session?.sub) {
@@ -89,12 +87,10 @@ export async function PATCH(req, { params }) {
   const action = String(body.action || "").toLowerCase();
   const pdDept = body.pdDept ? String(body.pdDept) : "";
 
-  // สิทธิ์:
   const isPUR = role.includes("PURCHASING");
   const isHK = role.includes("HOUSEKEEPER");
   const isHEAD = role.includes("HEAD");
 
-  // ตรวจสิทธิ์ตาม action
   if ((action === "approve" || action === "reject") && !isHEAD) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
@@ -121,6 +117,7 @@ export async function PATCH(req, { params }) {
 
     let nextStatus = null;
     let note = "";
+    let responseExtra = {}; // สำหรับแนบ T_No ตอน markcompleted
 
     if (action === "approve") {
       if (cur.R_Status !== "Waiting") {
@@ -140,7 +137,6 @@ export async function PATCH(req, { params }) {
         );
       }
 
-      // ✅ ดึงชื่อจริงของผู้ใช้จาก User
       const [[pdUser]] = await conn.execute(
         `SELECT Fullname FROM User WHERE Username = ?`,
         [pdDept]
@@ -156,6 +152,12 @@ export async function PATCH(req, { params }) {
          WHERE R_No=?`,
         [nextStatus, session.sub, pdDept, id]
       );
+
+      await conn.execute(
+        `INSERT INTO Request_Transaction (RT_DateTime, RT_Note, R_No, Username)
+         VALUES (NOW(), ?, ?, ?)`,
+        [note, id, session.sub]
+      );
     } else if (action === "reject") {
       if (cur.R_Status !== "Waiting") {
         await conn.rollback();
@@ -167,11 +169,18 @@ export async function PATCH(req, { params }) {
       }
       nextStatus = "Rejected";
       note = "หัวหน้าปฏิเสธคำขอ";
+
       await conn.execute(
         `UPDATE Request 
            SET R_Status=?, H_Username=?, R_LastModified=NOW()
          WHERE R_No=?`,
         [nextStatus, session.sub, id]
+      );
+
+      await conn.execute(
+        `INSERT INTO Request_Transaction (RT_DateTime, RT_Note, R_No, Username)
+         VALUES (NOW(), ?, ?, ?)`,
+        [note, id, session.sub]
       );
     } else if (action === "startpurchasing") {
       if (cur.R_Status !== "Approved" && cur.R_Status !== "Accepted") {
@@ -184,9 +193,16 @@ export async function PATCH(req, { params }) {
       }
       nextStatus = "Purchasing";
       note = "ฝ่ายจัดซื้อเริ่มดำเนินการจัดซื้อ";
+
       await conn.execute(
         `UPDATE Request SET R_Status=?, PD_Username=?, R_LastModified=NOW() WHERE R_No=?`,
         [nextStatus, session.sub, id]
+      );
+
+      await conn.execute(
+        `INSERT INTO Request_Transaction (RT_DateTime, RT_Note, R_No, Username)
+         VALUES (NOW(), ?, ?, ?)`,
+        [note, id, session.sub]
       );
     } else if (action === "markreceived") {
       if (cur.R_Status !== "Purchasing") {
@@ -199,12 +215,18 @@ export async function PATCH(req, { params }) {
       }
       nextStatus = "Received";
       note = "ฝ่ายจัดซื้อยืนยันได้รับของแล้ว";
+
       await conn.execute(
         `UPDATE Request SET R_Status=?, PD_Username=COALESCE(PD_Username, ?), R_LastModified=NOW() WHERE R_No=?`,
         [nextStatus, session.sub, id]
       );
+
+      await conn.execute(
+        `INSERT INTO Request_Transaction (RT_DateTime, RT_Note, R_No, Username)
+         VALUES (NOW(), ?, ?, ?)`,
+        [note, id, session.sub]
+      );
     } else if (action === "markcompleted") {
-      
       if (cur.R_Status !== "Received") {
         await conn.rollback();
         await conn.end();
@@ -214,25 +236,23 @@ export async function PATCH(req, { params }) {
         );
       }
 
-      const isHK = String(session.role || "")
-        .toUpperCase()
-        .includes("HOUSEKEEPER");
-      const nextStatus = "Completed";
-      const note = isHK
+      nextStatus = "Completed";
+      note = isHK
         ? "แม่บ้านยืนยันเสร็จสิ้น รับของเข้าคลังแล้ว"
         : "ฝ่ายจัดซื้อยืนยันเสร็จสิ้น รับของเข้าคลังแล้ว";
 
-      // อัปเดตสถานะใบคำขอ
+      // 1) อัปเดตสถานะใบคำขอ
       await conn.execute(
         `UPDATE Request SET R_Status=?, R_LastModified=NOW() WHERE R_No=?`,
         [nextStatus, id]
       );
 
-      // อัปเดตสต็อกตามรายการในคำขอ
+      // 2) อัปเดตสต็อก + เตรียมทำ Transaction
       const [details] = await conn.execute(
         `SELECT I_Id, RD_Amount FROM Request_Detail WHERE R_No=?`,
         [id]
       );
+
       for (const d of details) {
         await conn.execute(
           `UPDATE Item SET I_Quantity = I_Quantity + ? WHERE I_Id = ?`,
@@ -240,14 +260,13 @@ export async function PATCH(req, { params }) {
         );
       }
 
-      // ✅ สร้าง Transaction เฉพาะเมื่อ Completed เท่านั้น
+      // 3) สร้าง Transaction + รายการรายละเอียด (หลังสต็อกถูกอัปเดตแล้ว)
       const [txResult] = await conn.execute(
         `INSERT INTO Transaction (T_DateTime, T_Note, HK_Username) VALUES (NOW(), ?, ?)`,
         [`ได้รับของตามรายการคำขอที่ #${id}`, session.sub]
       );
       const T_No = txResult.insertId;
 
-      // บันทึกรายการ Transaction_Detail หลังอัปเดตสต็อกแล้ว
       for (const d of details) {
         const [[item]] = await conn.execute(
           `SELECT I_Quantity FROM Item WHERE I_Id = ?`,
@@ -257,59 +276,33 @@ export async function PATCH(req, { params }) {
 
         await conn.execute(
           `INSERT INTO Transaction_Detail (TD_Amount_Changed, TD_Total_Left, T_No, I_Id)
-       VALUES (?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?)`,
           [d.RD_Amount, totalLeft, T_No, d.I_Id]
         );
       }
 
-      // บันทึกประวัติการเปลี่ยนสถานะ (Request_Transaction)
+      // 4) Log สถานะใบคำขอ
       await conn.execute(
         `INSERT INTO Request_Transaction (RT_DateTime, RT_Note, R_No, Username)
-     VALUES (NOW(), ?, ?, ?)`,
+         VALUES (NOW(), ?, ?, ?)`,
         [note, id, session.sub]
       );
 
-      await conn.commit();
-      await conn.end();
-      return NextResponse.json({ ok: true, R_No: id, R_Status: nextStatus, T_No });
+      responseExtra = { T_No }; // แนบไปกับ response เฉพาะเคสนี้
     } else {
       await conn.rollback();
       await conn.end();
       return NextResponse.json({ error: "unknown action" }, { status: 400 });
     }
 
-    // บันทึกประวัติ
-    await conn.execute(
-      `INSERT INTO Request_Transaction (RT_DateTime, RT_Note, R_No, Username)
-       VALUES (NOW(), ?, ?, ?)`,
-      [note, id, session.sub]
-    );
-
-    const [details] = await conn.execute(
-      `SELECT I_Id, RD_Amount FROM Request_Detail WHERE R_No=?`,
-      [id]
-    );
-
-    // ✅ ดึงรายละเอียดรายการของที่ได้รับ
-    for (const d of details) {
-      // ดึงจำนวนของปัจจุบันในคลัง
-      const [[item]] = await conn.execute(
-        `SELECT I_Quantity FROM Item WHERE I_Id = ?`,
-        [d.I_Id]
-      );
-
-      const totalLeft = item?.I_Quantity ?? 0; // จำนวนล่าสุดหลังอัปเดตแล้ว
-
-      // ✅ บันทึกรายการลง Transaction_Detail
-      await conn.execute(
-        `INSERT INTO Transaction_Detail (TD_Amount_Changed, TD_Total_Left, T_No, I_Id) VALUES (?, ?, ?, ?)`,
-        [d.RD_Amount, totalLeft, T_No, d.I_Id]
-      );
-    }
-
     await conn.commit();
     await conn.end();
-    return NextResponse.json({ ok: true, R_No: id, R_Status: nextStatus });
+    return NextResponse.json({
+      ok: true,
+      R_No: id,
+      R_Status: nextStatus,
+      ...responseExtra,
+    });
   } catch (e) {
     try {
       await conn.rollback();
@@ -321,3 +314,4 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ error: "server error" }, { status: 500 });
   }
 }
+

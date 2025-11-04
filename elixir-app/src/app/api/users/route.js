@@ -97,7 +97,7 @@ export async function POST(req) {
     );
     if (dup) {
       return NextResponse.json(
-        { error: "มีชื่อผู้ใช้นี้อยู่แล้ว" },
+        { error: "มีชื่อผู้ใช้งานนี้อยู่ในระบบแล้ว" },
         { status: 409 }
       );
     }
@@ -114,7 +114,13 @@ export async function POST(req) {
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("POST /api/users error:", e);
-    return NextResponse.json({ error: "insert failed" }, { status: 500 });
+    if (e.code == "ER_DUP_ENTRY") {
+      return NextResponse.json(
+        { error: "มีชื่อ-สกุลนี้อยู่ในระบบแล้ว" },
+        { status: 409 }
+      );
+    }
+      return NextResponse.json({ error: "insert failed" }, { status: 500 });
   } finally {
     await conn.end();
   }

@@ -182,7 +182,7 @@ export async function POST(req) {
     const [reqResult] = await conn.execute(
       `
       INSERT INTO REQUEST (R_Status, R_DateTime, R_LastModified, HK_Username, H_Username, PD_Username)
-      VALUES ('Waiting', NOW(), NOW(), ?, ?, NULL)
+      VALUES ('Waiting', CONVERT_TZ(NOW(), '+00:00', '+07:00'), CONVERT_TZ(NOW(), '+00:00', '+07:00'), ?, ?, NULL)
       `,
       [session.sub, headUsername]
     );
@@ -203,7 +203,7 @@ export async function POST(req) {
     await conn.execute(
       `
       INSERT INTO REQUEST_TRANSACTION (RT_DateTime, RT_Note, R_No, Username)
-      VALUES (NOW(), 'สร้างคำขอจัดซื้อใหม่', ?, ?)
+      VALUES (CONVERT_TZ(NOW(), '+00:00', '+07:00'), 'สร้างคำขอจัดซื้อใหม่', ?, ?)
       `,
       [requestNo, session.sub]
     );

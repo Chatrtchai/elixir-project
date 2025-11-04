@@ -121,7 +121,7 @@ export async function POST(req) {
     // 1) สร้างหัวใบเบิก
     // WITHDRAW_LIST(WL_No, WL_DateTime, WL_Is_Finished, WL_Finish_DateTime, HK_Username)
     const [wlHead] = await conn.execute(
-      "INSERT INTO withdraw_list (WL_DateTime, WL_Is_Finished, HK_Username) VALUES (NOW(), 0, ?)",
+      "INSERT INTO withdraw_list (WL_DateTime, WL_Is_Finished, HK_Username) VALUES (CONVERT_TZ(NOW(), '+00:00', '+07:00'), 0, ?)",
       [session.sub]
     );
     const WL_No = wlHead.insertId;
@@ -159,7 +159,7 @@ export async function POST(req) {
     // 3) TRANSACTION (หัว)
 
     const [trxHead] = await conn.execute(
-      "INSERT INTO `transaction` (`T_DateTime`, `T_Note`, `HK_Username`) VALUES (NOW(), ?, ?)",
+      "INSERT INTO `transaction` (`T_DateTime`, `T_Note`, `HK_Username`) VALUES (CONVERT_TZ(NOW(), '+00:00', '+07:00'), ?, ?)",
       ["เบิกของ", session.sub]
     );
 

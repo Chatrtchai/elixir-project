@@ -10,7 +10,9 @@ export default function HKHistoryDetailModalPage() {
   const router = useRouter();
   const sp = useSearchParams();
 
+  // อ่าน filter เดิมจาก URL ของโมดัล
   const type = (sp.get("type") || "transaction").toLowerCase(); // transaction | request_transaction
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
@@ -44,14 +46,19 @@ export default function HKHistoryDetailModalPage() {
     if (id) load();
   }, [id, type]);
 
+  // ปิดด้วยคีย์ Esc -> กลับไปหน้าลิสต์พร้อม type เดิม
   useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && router.back();
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        router.push(`/housekeeper/history?type=${encodeURIComponent(type)}`);
+      }
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [router]);
+  }, [router, type]);
 
-  // เดิมยังคงใช้ lines ได้ตามปกติ
-  const lines = data?.lines || [];
+  // รองรับชื่อฟิลด์บรรทัดหลายรูปแบบจาก API
+  const lines = data?.lines || data?.items || data?.details || data?.Rows || [];
 
   // ✅ บรรทัดของ REQUEST_DETAIL (ถ้าไม่มีให้ fallback เป็น lines)
   const rd_lines = data?.rd_lines || [];
@@ -61,7 +68,9 @@ export default function HKHistoryDetailModalPage() {
       open
       title={`${title} (#${id})`}
       width={"w-[600px]"}
-      onClose={() => router.back()}
+      onClose={() =>
+        router.push(`/housekeeper/history?type=${encodeURIComponent(type)}`)
+      }
     >
       {loading ? (
         <div className="text-gray-400">กำลังโหลด...</div>
@@ -166,7 +175,9 @@ export default function HKHistoryDetailModalPage() {
 
           <div className="flex justify-end gap-3 mt-4">
             <button
-              onClick={() => router.back()}
+              onClick={() =>
+                router.push(`/housekeeper/history?type=${encodeURIComponent(type)}`)
+              }
               type="button"
               className="px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 cursor-pointer"
             >

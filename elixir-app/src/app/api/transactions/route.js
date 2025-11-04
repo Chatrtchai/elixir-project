@@ -14,7 +14,6 @@ export async function GET(req) {
   const conn = await createConnection();
   try {
     let sql = "";
-    let params = [];
 
     if (type === "transaction") {
       sql = `

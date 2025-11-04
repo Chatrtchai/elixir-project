@@ -1,20 +1,39 @@
 // src/app/(dashboard)/admin/history/page.js
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function HKHistoryPage() {
+  const router = useRouter();
+  const sp = useSearchParams();
+
+  const validTypes = useMemo(() => ["transaction", "request_transaction"], []);
+  const initialType = useMemo(() => {
+    const t = (sp.get("type") || "").toLowerCase();
+    return validTypes.includes(t) ? t : "transaction";
+  }, [sp, validTypes]);
+
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [filter, setFilter] = useState("transaction"); // all | transaction | request_transaction
+  const [filter, setFilter] = useState(initialType); // transaction | request_transaction
+
+  // sync จาก URL -> state (รองรับ back/forward หรือเปิดเข้ามาพร้อม type)
+  useEffect(() => {
+    const t = (sp.get("type") || "").toLowerCase();
+    if (validTypes.includes(t) && t !== filter) {
+      setFilter(t);
+    }
+  }, [sp, validTypes, filter]);
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
-        const query = filter === "all" ? "" : `?type=${filter}`;
+        setError("");
+        const query = `?type=${encodeURIComponent(filter)}`;
         const res = await fetch(`/api/transactions${query}`, {
           cache: "no-store",
         });
@@ -44,7 +63,11 @@ export default function HKHistoryPage() {
 
         <select
           value={filter}
-          onChange={(e) => setFilter(e.target.value)}
+          onChange={(e) => {
+            const next = e.target.value;
+            setFilter(next);
+            router.replace(`/admin/history?type=${encodeURIComponent(next)}`);
+          }}
           className="border rounded-md px-3 py-1 text-sm"
         >
           <option value="transaction">คลังของ</option>
@@ -65,19 +88,19 @@ export default function HKHistoryPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={3} className="text-center py-4 text-gray-400">
+                <td colSpan={4} className="text-center py-4 text-gray-400">
                   กำลังโหลด...
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={3} className="text-center py-4 text-red-500">
+                <td colSpan={4} className="text-center py-4 text-red-500">
                   เกิดข้อผิดพลาด: {error}
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={3} className="text-center py-4 text-gray-400">
+                <td colSpan={4} className="text-center py-4 text-gray-400">
                   ไม่พบข้อมูล
                 </td>
               </tr>

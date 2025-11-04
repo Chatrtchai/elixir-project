@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import ModalWrapper from "@/components/modal/ModalWrapper";
 import { useParams, useRouter } from "next/navigation";
-import { Eye, EyeOff } from "lucide-react"; // 👈 เพิ่ม icon สำหรับแสดง/ซ่อนรหัสผ่าน
+import { Eye, EyeOff } from "lucide-react";
 
 export default function UserEditModal() {
   const params = useParams();
@@ -15,11 +15,11 @@ export default function UserEditModal() {
   const [form, setForm] = useState({
     username: currentUsername,
     fullName: "",
-    role: "ADMIN",
+    role: "",
     password: "",
   });
   const [err, setErr] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // 👈 toggle password
+  const [showPassword, setShowPassword] = useState(false);
 
   // โหลดข้อมูลผู้ใช้
   useEffect(() => {
@@ -168,8 +168,8 @@ export default function UserEditModal() {
             onChange={(e) => setForm({ ...form, role: e.target.value })}
           >
             {/* <option value="ADMIN">ผู้ดูแลระบบ</option> */}
-            <option value="HEAD">หัวหน้า</option>
             <option value="HOUSEKEEPER">พนักงานทำความสะอาด</option>
+            <option value="HEAD">หัวหน้า</option>
             <option value="PURCHASING DEPARTMENT">พนักงานแผนกจัดซื้อ</option>
           </select>
         </div>

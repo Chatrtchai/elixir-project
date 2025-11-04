@@ -126,8 +126,6 @@ export default function HeadRequestDetailAction() {
     }
   };
 
-  console.log("data: ", data);
-
   return (
     <ModalWrapper title={`รายละเอียดคำขอ #${id}`} width={"w-[600px]"}>
       <div className="space-y-3 text-sm">
@@ -182,6 +180,14 @@ export default function HeadRequestDetailAction() {
               {(data.details || []).map((d) => (
                 <li key={d.RD_Id}>
                   {d.I_Name} x {d.RD_Amount}
+                  {data.R_Status == "Waiting" && (
+                    <ul className="list-disc list-inside ml-5 mt-1">
+                      <li>
+                        จำนวนของในคลัง (ปัจจุบัน) {d.I_Quantity}
+                        {" ชิ้น"}
+                      </li>
+                    </ul>
+                  )}
                 </li>
               ))}
             </ul>

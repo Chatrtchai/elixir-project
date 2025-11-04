@@ -12,21 +12,26 @@ export async function GET(req) {
     }
 
     const conn = await createConnection();
-    const [[user]] = await conn.execute(
+    try {
+      const [[user]] = await conn.execute(
       "SELECT Username, Fullname, Role, Is_Login FROM `user` WHERE Username = ? LIMIT 1",
       [s.sub]
     );
-    await conn.end();
 
-    // ใช้ Is_Login จากฐานข้อมูลเป็นตัวชี้วัดความ active
-    if (!user || !user.Is_Login) {
-      return NextResponse.json({ loggedIn: false }, { status: 401 });
+      // ใช้ Is_Login จากฐานข้อมูลเป็นตัวชี้วัดความ active
+      if (!user || !user.Is_Login) {
+        return NextResponse.json({ loggedIn: false }, { status: 401 });
+      }
+
+      return NextResponse.json({
+        loggedIn: true,
+        user: { username: user.Username, name: user.Fullname, role: user.Role },
+      });
+    } finally {
+      try {
+        conn.release();
+      } catch {}
     }
-
-    return NextResponse.json({
-      loggedIn: true,
-      user: { username: user.Username, name: user.Fullname, role: user.Role },
-    });
   } catch (e) {
     console.error("/api/auth/session", e);
     return NextResponse.json(

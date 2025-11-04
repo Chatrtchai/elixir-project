@@ -46,7 +46,6 @@ export async function GET(_req, { params }) {
     );
 
     if (!header) {
-      await conn.end();
       return NextResponse.json({ error: "not found" }, { status: 404 });
     }
 
@@ -61,14 +60,14 @@ export async function GET(_req, { params }) {
       [id]
     );
 
-    await conn.end();
     return NextResponse.json({ ...header, details });
   } catch (e) {
     console.error("GET /api/requests/:id error", e);
-    try {
-      await conn.end();
-    } catch {}
     return NextResponse.json({ error: "server error" }, { status: 500 });
+  } finally {
+    try {
+      conn.release();
+    } catch {}
   }
 }
 
@@ -111,7 +110,6 @@ export async function PATCH(req, { params }) {
     );
     if (!cur) {
       await conn.rollback();
-      await conn.end();
       return NextResponse.json({ error: "not found" }, { status: 404 });
     }
 
@@ -122,16 +120,14 @@ export async function PATCH(req, { params }) {
     if (action === "approve") {
       if (cur.R_Status !== "Waiting") {
         await conn.rollback();
-        await conn.end();
-        return NextResponse.json(
+          return NextResponse.json(
           { error: `invalid transition ${cur.R_Status} -> Approved` },
           { status: 409 }
         );
       }
       if (!pdDept) {
         await conn.rollback();
-        await conn.end();
-        return NextResponse.json(
+          return NextResponse.json(
           { error: "pdDept (Purchasing Username) is required" },
           { status: 400 }
         );
@@ -161,8 +157,7 @@ export async function PATCH(req, { params }) {
     } else if (action === "reject") {
       if (cur.R_Status !== "Waiting") {
         await conn.rollback();
-        await conn.end();
-        return NextResponse.json(
+          return NextResponse.json(
           { error: `invalid transition ${cur.R_Status} -> Rejected` },
           { status: 409 }
         );
@@ -185,8 +180,7 @@ export async function PATCH(req, { params }) {
     } else if (action === "startpurchasing") {
       if (cur.R_Status !== "Approved" && cur.R_Status !== "Accepted") {
         await conn.rollback();
-        await conn.end();
-        return NextResponse.json(
+          return NextResponse.json(
           { error: `invalid transition ${cur.R_Status} -> Purchasing` },
           { status: 409 }
         );
@@ -207,7 +201,6 @@ export async function PATCH(req, { params }) {
     } else if (action === "markreceived") {
       if (cur.R_Status !== "Purchasing") {
         await conn.rollback();
-        await conn.end();
         return NextResponse.json(
           { error: `invalid transition ${cur.R_Status} -> Received` },
           { status: 409 }
@@ -229,7 +222,6 @@ export async function PATCH(req, { params }) {
     } else if (action === "markcompleted") {
       if (cur.R_Status !== "Received") {
         await conn.rollback();
-        await conn.end();
         return NextResponse.json(
           { error: `invalid transition ${cur.R_Status} -> Completed` },
           { status: 409 }
@@ -291,12 +283,10 @@ export async function PATCH(req, { params }) {
       responseExtra = { T_No }; // แนบไปกับ response เฉพาะเคสนี้
     } else {
       await conn.rollback();
-      await conn.end();
       return NextResponse.json({ error: "unknown action" }, { status: 400 });
     }
 
     await conn.commit();
-    await conn.end();
     return NextResponse.json({
       ok: true,
       R_No: id,
@@ -307,11 +297,12 @@ export async function PATCH(req, { params }) {
     try {
       await conn.rollback();
     } catch {}
-    try {
-      await conn.end();
-    } catch {}
     console.error("PATCH /api/requests/:id error", e);
     return NextResponse.json({ error: "server error" }, { status: 500 });
+  } finally {
+    try {
+      conn.release();
+    } catch {}
   }
 }
 

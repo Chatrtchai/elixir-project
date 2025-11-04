@@ -136,7 +136,6 @@ export async function PATCH(req, { params }) {
       );
 
       await conn.commit();
-      await conn.end();
       return NextResponse.json(
         {
           ok: true,
@@ -147,7 +146,6 @@ export async function PATCH(req, { params }) {
       );
     } catch (e) {
       await conn.rollback().catch(() => {});
-      await conn.end().catch(() => {});
       if (e.message === "withdraw_list_not_found") {
         return NextResponse.json(
           { error: "withdraw_list_not_found" },
@@ -175,6 +173,10 @@ export async function PATCH(req, { params }) {
         { error: "return_patch_failed" },
         { status: 500 }
       );
+    } finally {
+      try {
+        conn.release();
+      } catch {}
     }
   } catch (e) {
     // อ่าน body ไม่ได้/อื่นๆ
@@ -234,14 +236,12 @@ export async function POST(req, { params }) {
       }
 
       await conn.commit();
-      await conn.end();
       return NextResponse.json(
         { ok: true, WL_No: wlno, T_No },
         { status: 201 }
       );
     } catch (e) {
       await conn.rollback().catch(() => {});
-      await conn.end().catch(() => {});
       if (e.message === "withdraw_list_not_found") {
         return NextResponse.json(
           { error: "withdraw_list_not_found" },
@@ -269,6 +269,10 @@ export async function POST(req, { params }) {
         { error: "return_post_failed" },
         { status: 500 }
       );
+    } finally {
+      try {
+        conn.release();
+      } catch {}
     }
   } catch {
     console.log("/ ERROR ON PATCH!");

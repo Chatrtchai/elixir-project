@@ -91,6 +91,8 @@ export async function POST(req) {
     } catch {}
     return NextResponse.json({ error: "server error" }, { status: 500 });
   } finally {
-    await conn.end();
+    try {
+      conn.release();
+    } catch {}
   }
 }

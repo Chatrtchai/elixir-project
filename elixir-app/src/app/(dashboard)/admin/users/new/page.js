@@ -29,10 +29,15 @@ export default function NewUserModal() {
       return false;
     }
 
-    if ((form.username).length < 4) {
+    if (form.username.length < 4) {
       setErr(
-        "ความยาวอย่างน้อย 4 ตัวอักษร"
+        "ความยาวชื่อผู้ใช้งานอย่างน้อย 4 ตัวอักษร"
       );
+      return false;
+    }
+
+    if (form.username.length > 12) {
+      setErr("ความยาวชื่อผู้ใช้งานไม่เกิน 12 ตัวอักษร");
       return false;
     }
 
@@ -42,8 +47,18 @@ export default function NewUserModal() {
       return false;
     }
 
+    if (form.fullName.length > 40) {
+      setErr("ความยาวชื่อ-สกุลไม่เกิน 40 ตัวอักษร");
+      return false;
+    }
+
     if (form.password && form.password.length < 4) {
       setErr("รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร");
+      return false;
+    }
+
+    if (form.password && form.password.length > 12) {
+      setErr("รหัสผ่านต้องมีความยาวไม่เกิน 12 ตัวอักษร");
       return false;
     }
 

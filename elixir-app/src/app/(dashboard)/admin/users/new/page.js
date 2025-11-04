@@ -10,7 +10,7 @@ export default function NewUserModal() {
     username: "",
     password: "",
     fullName: "",
-    role: "ADMIN",
+    role: "HOUSEKEEPER",
   });
   const [err, setErr] = useState("");
   const [showPassword, setShowPassword] = useState(false); // 👈 สถานะเปิด/ปิดตา
@@ -62,6 +62,7 @@ export default function NewUserModal() {
       return false;
     }
 
+    setErr("");
     return true;
   };
 
@@ -85,7 +86,7 @@ export default function NewUserModal() {
 
   return (
     <ModalWrapper title="เพิ่มบัญชีผู้ใช้งาน" width={"w-[600px]"}>
-      <form onSubmit={save} className="space-y-4">
+      <form onSubmit={save} className="space-y-4" onChange={(e) => validateForm()} >
         {/* username */}
         <div>
           <label className="block text-sm font-medium mb-1">
@@ -142,8 +143,8 @@ export default function NewUserModal() {
             onChange={(e) => setForm({ ...form, role: e.target.value })}
           >
             {/* <option value="ADMIN">ผู้ดูแลระบบ</option> */}
+            <option value="HOUSEKEEPER" selected>พนักงานทำความสะอาด</option>
             <option value="HEAD">หัวหน้า</option>
-            <option value="HOUSEKEEPER">พนักงานทำความสะอาด</option>
             <option value="PURCHASING DEPARTMENT">พนักงานแผนกจัดซื้อ</option>
           </select>
         </div>

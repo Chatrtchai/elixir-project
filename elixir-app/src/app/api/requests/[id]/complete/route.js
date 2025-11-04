@@ -34,7 +34,7 @@ export async function POST(_req, { params }) {
     // 1) สร้างหัว transaction
     const note = `รับของตามคำร้อง #${rno}`;
     const [headRes] = await conn.execute(
-      "INSERT INTO `transaction` (`T_DateTime`,`T_Note`,`HK_Username`) VALUES (CONVERT_TZ(NOW(), '+00:00', '+07:00'), ?, ?)",
+      "INSERT INTO `transaction` (`T_DateTime`,`T_Note`,`HK_Username`) VALUES (NOW(), ?, ?)",
       [note, session.sub]
     );
     const T_No = headRes.insertId;
@@ -87,7 +87,7 @@ export async function POST(_req, { params }) {
       [rno]
     );
     await conn.execute(
-      "INSERT INTO request_transaction (`RT_DateTime`,`RT_Note`,`R_No`,`Username`) VALUES (CONVERT_TZ(NOW(), '+00:00', '+07:00'),'Completed',?,?)",
+      "INSERT INTO request_transaction (`RT_DateTime`,`RT_Note`,`R_No`,`Username`) VALUES (NOW(),'Completed',?,?)",
       [rno, session.sub]
     );
 

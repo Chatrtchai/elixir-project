@@ -130,7 +130,7 @@ export async function PATCH(req, { params }) {
       await conn.execute(
         `UPDATE withdraw_list
             SET WL_Is_Finished = 1,
-                WL_Finish_DateTime = CONVERT_TZ(NOW(), '+00:00', '+07:00')
+                WL_Finish_DateTime = NOW()
           WHERE WL_No = ?`,
         [wlno]
       );
@@ -209,7 +209,7 @@ export async function POST(req, { params }) {
 
       // สร้าง TRANSACTION head
       const [trxHead] = await conn.execute(
-        "INSERT INTO `transaction` (`T_DateTime`, `T_Note`, `HK_Username`) VALUES (CONVERT_TZ(NOW(), '+00:00', '+07:00'), ?, ?)",
+        "INSERT INTO `transaction` (`T_DateTime`, `T_Note`, `HK_Username`) VALUES (NOW(), ?, ?)",
         ["คืนของ", session.sub]
       );
       const T_No = trxHead.insertId;

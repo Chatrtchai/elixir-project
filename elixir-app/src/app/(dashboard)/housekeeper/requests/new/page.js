@@ -283,9 +283,6 @@ export default function NewHKRequestModal() {
               {lines.map((l, i) => {
                 const item = l.itemId ? findItem(l.itemId) : null;
                 const remainNow = l.itemId ? remainingForLine(i) : "";
-                const over =
-                  Number(l.amount || 0) >
-                  (Number.isFinite(remainNow) ? remainNow : Infinity);
 
                 return (
                   <div
@@ -316,7 +313,7 @@ export default function NewHKRequestModal() {
                       {/* จำนวน */}
                       <div className="sm:col-span-1">
                         <div className="sm:hidden text-[13px] text-gray-500">
-                          จำนวนที่ขอเพิ่ม (0–1000)
+                          จำนวนที่ขอเพิ่ม (1–1000)
                         </div>
                         <input
                           type="number"
@@ -340,12 +337,8 @@ export default function NewHKRequestModal() {
                             cp[i].amount = n;
                             setLines(cp);
                           }}
-                          className={[
-                            "w-full text-center px-2.5 py-[9px] bg-white rounded-lg",
-                            over
-                              ? "outline-red-400"
-                              : "outline-gray-300 focus:outline-[var(--color-primary)]",
-                          ].join(" ")}
+                          className={
+                            "w-full text-center px-2.5 py-[9px] bg-white rounded-lg"}
                           placeholder="กรอกจำนวน"
                         />
                       </div>

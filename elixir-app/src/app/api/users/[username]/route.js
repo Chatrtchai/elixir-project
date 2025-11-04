@@ -96,6 +96,9 @@ export async function PATCH(req, { params }) {
 
     return NextResponse.json({ ok: true });
   } catch (e) {
+    if (e.code == "ER_DUP_ENTRY") {
+      return jsonError("มีชื่อผู้ใช้งานนี้อยู่ในระบบแล้ว", 409);
+    }
     console.error("PATCH /users/[username] error:", e);
     return jsonError("Internal Server Error", 500);
   }

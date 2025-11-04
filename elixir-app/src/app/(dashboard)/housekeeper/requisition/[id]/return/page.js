@@ -78,7 +78,7 @@ export default function WithdrawReturnModal() {
         }))
         .filter((x) => x.amount >= 0);
 
-      console.log("items ", items);
+      // console.log("items ", items);
 
       if (items.length === 0) {
         throw new Error("กรุณาระบุจำนวนที่คืนอย่างน้อย 1 รายการ");
@@ -125,6 +125,10 @@ export default function WithdrawReturnModal() {
   };
 
   if (!data) return null;
+
+  const hasEmpty = returns.some(
+    (r) => r.amount === "" || !Number.isFinite(Number(r.amount))
+  );
 
   return (
     <ModalWrapper title={`คืนของจากใบเบิก #${id}`} width="w-[700px]">
@@ -217,12 +221,13 @@ export default function WithdrawReturnModal() {
         <div className="flex justify-end pt-2 gap-3">
           <button
             onClick={submit}
-            disabled={loading}
+            disabled={loading || hasEmpty}
             className="rounded-md bg-[var(--color-primary)] text-white px-4 py-2 disabled:opacity-50 cursor-pointer hover:bg-[var(--color-primary-dark)]"
           >
             {loading ? "กำลังบันทึก..." : "บันทึกการคืนของ"}
           </button>
           <button
+            type="button"
             onClick={() => router.back()}
             className="px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 cursor-pointer"
           >

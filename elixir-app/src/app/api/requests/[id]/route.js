@@ -148,14 +148,14 @@ export async function PATCH(req, { params }) {
 
       await conn.execute(
         `UPDATE Request 
-           SET R_Status=?, H_Username=?, PD_Username=?, R_LastModified=NOW()
+           SET R_Status=?, H_Username=?, PD_Username=?, R_LastModified=CONVERT_TZ(NOW(), '+00:00', '+07:00')
          WHERE R_No=?`,
         [nextStatus, session.sub, pdDept, id]
       );
 
       await conn.execute(
         `INSERT INTO Request_Transaction (RT_DateTime, RT_Note, R_No, Username)
-         VALUES (NOW(), ?, ?, ?)`,
+         VALUES (CONVERT_TZ(NOW(), '+00:00', '+07:00'), ?, ?, ?)`,
         [note, id, session.sub]
       );
     } else if (action === "reject") {
@@ -172,14 +172,14 @@ export async function PATCH(req, { params }) {
 
       await conn.execute(
         `UPDATE Request 
-           SET R_Status=?, H_Username=?, R_LastModified=NOW()
+           SET R_Status=?, H_Username=?, R_LastModified=CONVERT_TZ(NOW(), '+00:00', '+07:00')
          WHERE R_No=?`,
         [nextStatus, session.sub, id]
       );
 
       await conn.execute(
         `INSERT INTO Request_Transaction (RT_DateTime, RT_Note, R_No, Username)
-         VALUES (NOW(), ?, ?, ?)`,
+         VALUES (CONVERT_TZ(NOW(), '+00:00', '+07:00'), ?, ?, ?)`,
         [note, id, session.sub]
       );
     } else if (action === "startpurchasing") {
@@ -195,13 +195,13 @@ export async function PATCH(req, { params }) {
       note = "ฝ่ายจัดซื้อเริ่มดำเนินการจัดซื้อ";
 
       await conn.execute(
-        `UPDATE Request SET R_Status=?, PD_Username=?, R_LastModified=NOW() WHERE R_No=?`,
+        `UPDATE Request SET R_Status=?, PD_Username=?, R_LastModified=CONVERT_TZ(NOW(), '+00:00', '+07:00') WHERE R_No=?`,
         [nextStatus, session.sub, id]
       );
 
       await conn.execute(
         `INSERT INTO Request_Transaction (RT_DateTime, RT_Note, R_No, Username)
-         VALUES (NOW(), ?, ?, ?)`,
+         VALUES (CONVERT_TZ(NOW(), '+00:00', '+07:00'), ?, ?, ?)`,
         [note, id, session.sub]
       );
     } else if (action === "markreceived") {
@@ -217,13 +217,13 @@ export async function PATCH(req, { params }) {
       note = "ฝ่ายจัดซื้อยืนยันได้รับของแล้ว";
 
       await conn.execute(
-        `UPDATE Request SET R_Status=?, PD_Username=COALESCE(PD_Username, ?), R_LastModified=NOW() WHERE R_No=?`,
+        `UPDATE Request SET R_Status=?, PD_Username=COALESCE(PD_Username, ?), R_LastModified=CONVERT_TZ(NOW(), '+00:00', '+07:00') WHERE R_No=?`,
         [nextStatus, session.sub, id]
       );
 
       await conn.execute(
         `INSERT INTO Request_Transaction (RT_DateTime, RT_Note, R_No, Username)
-         VALUES (NOW(), ?, ?, ?)`,
+         VALUES (CONVERT_TZ(NOW(), '+00:00', '+07:00'), ?, ?, ?)`,
         [note, id, session.sub]
       );
     } else if (action === "markcompleted") {
@@ -243,7 +243,7 @@ export async function PATCH(req, { params }) {
 
       // 1) อัปเดตสถานะใบคำขอ
       await conn.execute(
-        `UPDATE Request SET R_Status=?, R_LastModified=NOW() WHERE R_No=?`,
+        `UPDATE Request SET R_Status=?, R_LastModified=CONVERT_TZ(NOW(), '+00:00', '+07:00') WHERE R_No=?`,
         [nextStatus, id]
       );
 
@@ -262,7 +262,7 @@ export async function PATCH(req, { params }) {
 
       // 3) สร้าง Transaction + รายการรายละเอียด (หลังสต็อกถูกอัปเดตแล้ว)
       const [txResult] = await conn.execute(
-        `INSERT INTO Transaction (T_DateTime, T_Note, HK_Username) VALUES (NOW(), ?, ?)`,
+        `INSERT INTO Transaction (T_DateTime, T_Note, HK_Username) VALUES (CONVERT_TZ(NOW(), '+00:00', '+07:00'), ?, ?)`,
         [`ได้รับของตามรายการคำขอที่ #${id}`, session.sub]
       );
       const T_No = txResult.insertId;
@@ -284,7 +284,7 @@ export async function PATCH(req, { params }) {
       // 4) Log สถานะใบคำขอ
       await conn.execute(
         `INSERT INTO Request_Transaction (RT_DateTime, RT_Note, R_No, Username)
-         VALUES (NOW(), ?, ?, ?)`,
+         VALUES (CONVERT_TZ(NOW(), '+00:00', '+07:00'), ?, ?, ?)`,
         [note, id, session.sub]
       );
 

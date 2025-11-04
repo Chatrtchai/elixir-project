@@ -8,8 +8,8 @@ import ModalWrapper from "@/components/modal/ModalWrapper";
 
 const TH = {
   Waiting: "กำลังดำเนินการ",
-  Approved: "อนุมัติแล้ว",
-  Rejected: "ปฏิเสธแล้ว",
+  Approved: "ตอบรับคำขอ",
+  Rejected: "ปฏิเสธคำขอ",
   Purchasing: "ดำเนินการจัดซื้อ",
   Received: "ได้รับของแล้ว",
   Completed: "เสร็จสิ้นแล้ว",
@@ -103,7 +103,7 @@ export default function PurchaseRequestDetailPage() {
         <button
           onClick={onMarkReceived}
           disabled={updating}
-          className="rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 disabled:opacity-60 cursor-pointer transition"
+          className="rounded-lg bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 disabled:opacity-60 cursor-pointer transition"
         >
           {updating ? "กำลังอัปเดต..." : "ได้รับของแล้ว"}
         </button>

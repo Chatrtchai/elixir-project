@@ -11,7 +11,7 @@ const STATUS_MAP = {
   Approved: { th: "ตอบรับคำขอ", className: "text-green-600" },
   Rejected: { th: "ปฏิเสธคำขอ", className: "text-red-600" },
   Purchasing: { th: "ดำเนินการจัดซื้อ", className: "text-amber-600" },
-  Received: { th: "ได้รับของแล้ว", className: "text-amber-500" },
+  Received: { th: "ได้รับของแล้ว", className: "text-blue-500" },
   Completed: { th: "เสร็จสิ้นแล้ว", className: "text-gray-500" },
 };
 
@@ -74,7 +74,7 @@ export default function HeadRequestsPage() {
     <div className="p-6 space-y-6">
       <DashboardPageHeader
         title="รายการคำขอจัดซื้อ"
-        description="สร้างใบเบิกของ ดูรายละเอียด และคืนของ"
+        description="รายการคำขอจัดซื้อจากพนักงานทำความสะอาด (เฉพาะที่ส่งถึงคุณ)"
       />
 
       {/* search + layout 2 คอลัมน์ */}

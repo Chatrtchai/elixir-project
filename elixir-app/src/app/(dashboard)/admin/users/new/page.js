@@ -143,7 +143,7 @@ export default function NewUserModal() {
             onChange={(e) => setForm({ ...form, role: e.target.value })}
           >
             {/* <option value="ADMIN">ผู้ดูแลระบบ</option> */}
-            <option value="HOUSEKEEPER" selected>พนักงานทำความสะอาด</option>
+            <option value="HOUSEKEEPER">พนักงานทำความสะอาด</option>
             <option value="HEAD">หัวหน้า</option>
             <option value="PURCHASING DEPARTMENT">พนักงานแผนกจัดซื้อ</option>
           </select>

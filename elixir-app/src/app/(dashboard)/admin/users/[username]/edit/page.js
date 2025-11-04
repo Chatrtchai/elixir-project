@@ -60,9 +60,20 @@ export default function UserEditModal() {
       return false;
     }
 
+    if (form.username.length < 4) {
+      setErr("ความยาวอย่างน้อย 4 ตัวอักษร");
+      return false;
+    }
+
+    const fullNameRegex = /^[A-Za-zก-๙\s]+$/;
+    if (!fullNameRegex.test(form.fullName)) {
+      setErr("ชื่อ-สกุลต้องเป็นตัวอักษรภาษาไทยหรือภาษาอังกฤษเท่านั้น");
+      return false;
+    }
+
     // ตรวจสอบ password ถ้ามีกรอกใหม่
-    if (form.password && form.password.length < 6) {
-      setErr("รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
+    if (form.password && form.password.length < 4) {
+      setErr("รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร");
       return false;
     }
 

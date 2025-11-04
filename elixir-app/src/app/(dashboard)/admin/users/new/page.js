@@ -29,10 +29,21 @@ export default function NewUserModal() {
       return false;
     }
 
-    if ((form.username).length >= 4) {
+    if ((form.username).length < 4) {
       setErr(
         "ความยาวอย่างน้อย 4 ตัวอักษร"
       );
+      return false;
+    }
+
+    const fullNameRegex = /^[A-Za-zก-๙\s]+$/;
+    if (!fullNameRegex.test(form.fullName)) {
+      setErr("ชื่อ-สกุลต้องเป็นตัวอักษรภาษาไทยหรือภาษาอังกฤษเท่านั้น");
+      return false;
+    }
+
+    if (form.password && form.password.length < 4) {
+      setErr("รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร");
       return false;
     }
 

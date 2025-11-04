@@ -159,7 +159,9 @@ export async function GET(req) {
       { status: 500 }
     );
   } finally {
-    await conn.end();
+    try {
+      conn.release();
+    } catch {}
   }
 }
 
@@ -169,13 +171,14 @@ export async function POST(req) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  let conn;
   try {
     const { headUsername, items } = await req.json();
     if (!headUsername || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "ข้อมูลไม่ครบถ้วน" }, { status: 400 });
     }
 
-    const conn = await createConnection();
+    conn = await createConnection();
     await conn.beginTransaction();
 
     // 1️⃣ INSERT INTO REQUEST
@@ -209,14 +212,23 @@ export async function POST(req) {
     );
 
     await conn.commit();
-    await conn.end();
-
     return NextResponse.json({ success: true, R_No: requestNo });
   } catch (err) {
     console.error("POST /api/requests error:", err);
+    if (conn) {
+      try {
+        await conn.rollback();
+      } catch {}
+    }
     return NextResponse.json(
       { error: "ไม่สามารถบันทึกคำขอได้" },
       { status: 500 }
     );
+  } finally {
+    if (conn) {
+      try {
+        conn.release();
+      } catch {}
+    }
   }
 }

@@ -7,14 +7,18 @@ import { clearSessionCookie, readSession } from "@/lib/auth";
 export async function POST(req) {
   const session = await readSession(req);
   const conn = await createConnection();
-
-  if (session?.sub) {
-    // ✅ ตั้งค่า Is_Login = 0 เมื่อ logout
-    await conn.execute("UPDATE `user` SET Is_Login = 0 WHERE Username = ?", [
-      session.sub,
-    ]);
+  try {
+    if (session?.sub) {
+      // ✅ ตั้งค่า Is_Login = 0 เมื่อ logout
+      await conn.execute("UPDATE `user` SET Is_Login = 0 WHERE Username = ?", [
+        session.sub,
+      ]);
+    }
+  } finally {
+    try {
+      conn.release();
+    } catch {}
   }
-  await conn.end();
 
   // ล้าง cookie
   const cookie = clearSessionCookie();

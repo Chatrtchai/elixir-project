@@ -101,6 +101,8 @@ export async function POST(_req, { params }) {
       { status: 400 }
     );
   } finally {
-    conn.release();
+    try {
+      conn.release();
+    } catch {}
   }
 }

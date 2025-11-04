@@ -57,7 +57,6 @@ export async function GET(req, { params }) {
     const header = headerRows?.[0];
 
     if (!header) {
-      await conn.end();
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
 
@@ -138,11 +137,13 @@ export async function GET(req, { params }) {
       rd_lines, // ⬅️ เพิ่มบรรทัดจาก REQUEST_DETAIL (มีเมื่อ type=request_transaction)
     };
 
-    await conn.end();
     return NextResponse.json(payload);
   } catch (e) {
     console.error("GET /api/transactions/[id] error:", e);
-    await conn.end().catch(() => {});
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  } finally {
+    try {
+      conn.release();
+    } catch {}
   }
 }

@@ -11,13 +11,13 @@ export async function GET(_req, { params }) {
   const username = params?.username;
   if (!username) return jsonError("Missing username param", 400);
 
+  let conn;
   try {
-    const conn = await createConnection();
+    conn = await createConnection();
     const [rows] = await conn.execute(
       "SELECT Username, Fullname, Role, Is_Login FROM `user` WHERE Username=? LIMIT 1",
       [username]
     );
-    await conn.end();
 
     if (!rows || !rows[0]) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
@@ -26,6 +26,12 @@ export async function GET(_req, { params }) {
   } catch (e) {
     console.error("GET /users/[username] error:", e);
     return jsonError("Internal Server Error", 500);
+  } finally {
+    if (conn) {
+      try {
+        conn.release();
+      } catch {}
+    }
   }
 }
 
@@ -40,6 +46,7 @@ export async function PATCH(req, { params }) {
     return jsonError("Invalid JSON body", 400);
   }
 
+  let conn;
   try {
     const set = [];
     const values = [];
@@ -84,11 +91,10 @@ export async function PATCH(req, { params }) {
     }
 
     // ✅ ใช้ currentUsername ใน WHERE
-    const conn = await createConnection();
+    conn = await createConnection();
     const sql = `UPDATE \`user\` SET ${set.join(", ")} WHERE Username=?`;
     values.push(currentUsername);
     const [res] = await conn.execute(sql, values);
-    await conn.end();
 
     if (!res?.affectedRows) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
@@ -101,6 +107,12 @@ export async function PATCH(req, { params }) {
     }
     console.error("PATCH /users/[username] error:", e);
     return jsonError("Internal Server Error", 500);
+  } finally {
+    if (conn) {
+      try {
+        conn.release();
+      } catch {}
+    }
   }
 }
 
@@ -108,12 +120,12 @@ export async function DELETE(_req, { params }) {
   const username = params?.username;
   if (!username) return jsonError("Missing username param", 400);
 
+  let conn;
   try {
-    const conn = await createConnection();
+    conn = await createConnection();
     const [res] = await conn.execute("DELETE FROM `user` WHERE Username=?", [
       username,
     ]);
-    await conn.end();
 
     if (!res?.affectedRows) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
@@ -122,5 +134,11 @@ export async function DELETE(_req, { params }) {
   } catch (e) {
     console.error("DELETE /users/[username] error:", e);
     return jsonError("Internal Server Error", 500);
+  } finally {
+    if (conn) {
+      try {
+        conn.release();
+      } catch {}
+    }
   }
 }

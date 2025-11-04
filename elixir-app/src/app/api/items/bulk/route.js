@@ -162,7 +162,7 @@ export async function PUT(req) {
     );
   } finally {
     try {
-      if (conn) await conn.end();
+      if (conn) conn.release();
     } catch {}
   }
 }

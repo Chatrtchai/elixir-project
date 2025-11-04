@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import DashboardPageHeader from "@/components/dashboard/DashboardPageHeader";
 
 // แมประหว่างสถานะ DB ↔ ภาษาไทย + สี
 const STATUS_MAP = {
@@ -71,15 +72,10 @@ export default function HeadRequestsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* ชื่อหน้า */}
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--color-primary)]">
-          รายการคำขอจัดซื้อ
-        </h1>
-        <p className="text-sm text-gray-500">
-          สร้างใบเบิกของ ดูรายละเอียด และคืนของ
-        </p>
-      </div>
+      <DashboardPageHeader
+        title="รายการคำขอจัดซื้อ"
+        description="สร้างใบเบิกของ ดูรายละเอียด และคืนของ"
+      />
 
       {/* search + layout 2 คอลัมน์ */}
       <div className="grid grid-cols-1 gap-6">

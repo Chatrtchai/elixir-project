@@ -3,6 +3,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import DashboardPageHeader from "@/components/dashboard/DashboardPageHeader";
 
 export default function AdminUsersPage() {
   const [q, setQ] = useState("");
@@ -73,20 +74,18 @@ export default function AdminUsersPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <header className="flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl text-[var(--color-primary)] font-bold">
-            จัดการบัญชีผู้ใช้งาน
-          </h1>
-          <p className="text-gray-600">เพิ่ม แก้ไข หรือตรวจสอบข้อมูลผู้ใช้งาน</p>
-        </div>
-        <Link
-          href="/admin/users/new"
-          className="flex items-center gap-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white px-3 py-2 text-sm transition"
-        >
-          เพิ่มบัญชีผู้ใช้งาน
-        </Link>
-      </header>
+      <DashboardPageHeader
+        title="จัดการบัญชีผู้ใช้งาน"
+        description="เพิ่ม แก้ไข หรือตรวจสอบข้อมูลผู้ใช้งาน"
+        actions={
+          <Link
+            href="/admin/users/new"
+            className="flex items-center gap-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white px-3 py-2 text-sm transition"
+          >
+            เพิ่มบัญชีผู้ใช้งาน
+          </Link>
+        }
+      />
 
       {/* 🔍 ช่องค้นหา */}
       <div className="flex gap-2">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import DashboardPageHeader from "@/components/dashboard/DashboardPageHeader";
 
 export default function HeadInventoryPage() {
   const [q, setQ] = useState("");
@@ -30,9 +31,7 @@ export default function HeadInventoryPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-[var(--color-primary)]">
-        รายการของทั้งหมด
-      </h1>
+      <DashboardPageHeader title="รายการของทั้งหมด" />
 
       <div className="flex gap-2">
         <input

@@ -71,7 +71,7 @@ export default function HKRequisitionPage() {
       </div>
 
       {/* Table */}
-      <div className="overflow-y-auto max-h-[600px] pr-[10px]">
+      <div className="overflow-y-auto h-[600px] pr-[10px]">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-gray-600 sticky top-0">
             <tr>

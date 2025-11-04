@@ -130,9 +130,9 @@ export default function WithdrawReturnModal() {
     <ModalWrapper title={`คืนของจากใบเบิก #${id}`} width="w-[700px]">
       <div className="space-y-4 text-sm">
         {/* ตาราง: ชื่อรายการของที่เบิก | จำนวนที่เบิก | จำนวนที่คืน */}
-        <div className="overflow-x-auto">
+        <div className="overflow-y-auto h-[250px] pr-[10px]">
           <table className="min-w-full border rounded-lg overflow-hidden">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 sticky top-0">
               <tr>
                 <th className="text-left px-3 py-2 border-b">
                   ชื่อรายการของที่เบิก
@@ -144,12 +144,9 @@ export default function WithdrawReturnModal() {
             <tbody>
               {(data.details || []).map((d, idx) => {
                 const r = returns[idx] ?? {};
-                {/* const max = Number(d.WD_Amount_Left ?? 0); */}
                 const withdrawn = Number(d.WD_Amount ?? 0);
                 const amountStr = r.amount ?? "";
 
-                const val = Number(amountStr === "" ? 0 : amountStr);
-                const over = val > withdrawn;
                 const invalid =
                   amountStr !== "" &&
                   (!Number.isFinite(Number(amountStr)) ||
@@ -162,9 +159,7 @@ export default function WithdrawReturnModal() {
                         {d.I_Name}
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-center">
-                      {withdrawn}
-                    </td>
+                    <td className="px-3 py-2 text-center">{withdrawn}</td>
                     <td className="px-3 py-2 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <input

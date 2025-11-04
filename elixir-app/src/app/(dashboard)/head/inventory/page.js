@@ -1,58 +1,44 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import DashboardPageHeader from "@/components/dashboard/DashboardPageHeader";
+import { getInventoryItems } from "@/lib/dashboard-data";
+import Link from "next/link";
 
-export default function HeadInventoryPage() {
-  const [q, setQ] = useState("");
-  const [rows, setRows] = useState([]);
+export const revalidate = 10;
 
-  const fetchData = async () => {
-    const u = new URL("/api/items", window.location.origin);
-    if (q) u.searchParams.set("q", q);
-
-    const res = await fetch(u.toString(), { redirect: "manual" });
-
-    // กันเคส redirect/HTML
-    const ct = res.headers.get("content-type") || "";
-    if (!ct.includes("application/json")) {
-      console.error("Unexpected response for /api/items:", res.status, ct);
-      setRows([]); // fallback
-      return;
-    }
-
-    const json = await res.json().catch(() => []);
-    setRows(Array.isArray(json) ? json : []);
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
+export default async function HeadInventoryPage({ searchParams }) {
+  const q = String(searchParams?.q || "").trim();
+  const rows = await getInventoryItems(q);
 
   return (
     <div className="p-6 space-y-6">
       <DashboardPageHeader title="รายการของทั้งหมด" />
 
-      <div className="flex gap-2">
+      <form className="flex gap-2" action="" method="GET">
         <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
+          name="q"
+          defaultValue={q}
           placeholder="ค้นหาชื่อของ"
           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 placeholder:text-gray-400 focus:outline-none focus:border-[--color-primary] focus:ring-1 focus:ring-[--color-primary]"
         />
         <button
-          onClick={fetchData}
+          type="submit"
           className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
         >
           ค้นหา
         </button>
-      </div>
+        {q && (
+          <Link
+            href="/head/inventory"
+            className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
+          >
+            ล้าง
+          </Link>
+        )}
+      </form>
 
       <div className="overflow-x-auto max-h-[600px] pr-[10px]">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-gray-600 sticky top-0">
             <tr>
-              {/* <th className="text-left px-4 py-2">รหัส</th> */}
               <th className="text-left px-4 py-2">ชื่อรายการ</th>
               <th className="text-left px-4 py-2">คงเหลือ</th>
             </tr>
@@ -60,14 +46,13 @@ export default function HeadInventoryPage() {
           <tbody>
             {rows.map((r) => (
               <tr key={r.I_Id} className="border-t">
-                {/* <td className="px-4 py-2">{r.I_Id}</td> */}
                 <td className="px-4 py-2">{r.I_Name}</td>
                 <td className="px-4 py-2">{r.I_Quantity}</td>
               </tr>
             ))}
             {!rows.length && (
               <tr>
-                <td className="px-4 py-6 text-center text-gray-500" colSpan={3}>
+                <td className="px-4 py-6 text-center text-gray-500" colSpan={2}>
                   ไม่พบข้อมูล
                 </td>
               </tr>

@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import DashboardPageHeader from "@/components/dashboard/DashboardPageHeader";
 
 /** ---------- Utils ---------- */
 const isInt = (v) => /^-?\d+$/.test(String(v).trim());
@@ -178,36 +179,30 @@ export default function HKInventoryBulkEditPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[--color-primary]">
-            แก้ไขรายการทั้งหมด
-          </h1>
-          <p className="text-sm text-gray-500">
-            แก้ไขเฉพาะจำนวนคงเหลือ พร้อมระบุ Note สำหรับรอบการอัปเดตนี้
-          </p>
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            onClick={() => router.push("/housekeeper/inventory")}
-            className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
-          >
-            ← กลับไปหน้ารายการ
-          </button>
-          <button
-            onClick={saveAll}
-            disabled={saving || !hasChanges}
-            className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
-            title={!hasChanges ? "ยังไม่มีการเปลี่ยนแปลง" : ""}
-          >
-            {saving
-              ? "กำลังบันทึก..."
-              : `บันทึกทั้งหมด (${changedRows.length})`}
-          </button>
-        </div>
-      </div>
+      <DashboardPageHeader
+        title="แก้ไขรายการทั้งหมด"
+        description="แก้ไขเฉพาะจำนวนคงเหลือ พร้อมระบุ Note สำหรับรอบการอัปเดตนี้"
+        actions={
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              onClick={() => router.push("/housekeeper/inventory")}
+              className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
+            >
+              ← กลับไปหน้ารายการ
+            </button>
+            <button
+              onClick={saveAll}
+              disabled={saving || !hasChanges}
+              className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
+              title={!hasChanges ? "ยังไม่มีการเปลี่ยนแปลง" : ""}
+            >
+              {saving
+                ? "กำลังบันทึก..."
+                : `บันทึกทั้งหมด (${changedRows.length})`}
+            </button>
+          </div>
+        }
+      />
 
       {/* Note สำหรับรอบการอัปเดตนี้ */}
       <div className="rounded-xl border p-4">

@@ -37,14 +37,14 @@ export async function GET(req) {
       args
     );
 
-    await conn.end();
     return NextResponse.json(rows || []);
   } catch (e) {
     console.error("GET /api/users error", e);
-    try {
-      await conn.end();
-    } catch {}
     return NextResponse.json({ error: "server error" }, { status: 500 });
+  } finally {
+    try {
+      conn.release();
+    } catch {}
   }
 }
 
@@ -120,8 +120,10 @@ export async function POST(req) {
         { status: 409 }
       );
     }
-      return NextResponse.json({ error: "insert failed" }, { status: 500 });
+    return NextResponse.json({ error: "insert failed" }, { status: 500 });
   } finally {
-    await conn.end();
+    try {
+      conn.release();
+    } catch {}
   }
 }

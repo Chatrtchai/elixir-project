@@ -41,6 +41,8 @@ export async function GET(_req, { params }) {
     console.error("GET /api/withdraws/:wlno", e);
     return NextResponse.json({ error: "server error" }, { status: 500 });
   } finally {
-    await conn.end();
+    try {
+      conn.release();
+    } catch {}
   }
 }

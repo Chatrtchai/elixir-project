@@ -65,14 +65,16 @@ export async function GET(req) {
       args
     );
 
-    await conn.end();
     // หน้า UI คาดหวังเป็น "array" ตรง ๆ
     return NextResponse.json(rows || [], { status: 200 });
   } catch (e) {
     console.error("GET /api/withdraws error:", e);
-    await conn.end().catch(() => {});
     // ส่ง array ว่างเพื่อไม่ให้หน้าแตก
     return NextResponse.json([], { status: 200 });
+  } finally {
+    try {
+      conn.release();
+    } catch {}
   }
 }
 
@@ -192,11 +194,9 @@ export async function POST(req) {
     }
 
     await conn.commit();
-    await conn.end();
     return NextResponse.json({ ok: true, WL_No, T_No }, { status: 201 });
   } catch (e) {
     await conn.rollback().catch(() => {});
-    await conn.end().catch(() => {});
     console.error("POST /api/withdraws error:", e);
     if (String(e.message || "").startsWith("insufficient_stock")) {
       return NextResponse.json({ error: e.message }, { status: 400 });
@@ -205,5 +205,9 @@ export async function POST(req) {
       return NextResponse.json({ error: e.message }, { status: 404 });
     }
     return NextResponse.json({ error: "withdraw_failed" }, { status: 500 });
+  } finally {
+    try {
+      conn.release();
+    } catch {}
   }
 }

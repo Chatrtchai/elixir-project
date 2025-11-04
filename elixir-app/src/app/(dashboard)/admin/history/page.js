@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import DashboardPageHeader from "@/components/dashboard/DashboardPageHeader";
 
 export default function HKHistoryPage() {
   const router = useRouter();
@@ -51,29 +52,24 @@ export default function HKHistoryPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-primary)]">
-            ประวัติการทำรายการ
-          </h1>
-          <p className="text-sm text-gray-500">
-            ประวัติการทำรายการทั้งหมดภายในระบบ
-          </p>
-        </div>
-
-        <select
-          value={filter}
-          onChange={(e) => {
-            const next = e.target.value;
-            setFilter(next);
-            router.replace(`/admin/history?type=${encodeURIComponent(next)}`);
-          }}
-          className="border rounded-md px-3 py-1 text-sm"
-        >
-          <option value="transaction">คลังของ</option>
-          <option value="request_transaction">รายการคำขอสั่งซื้อ</option>
-        </select>
-      </header>
+      <DashboardPageHeader
+        title="ประวัติการทำรายการ"
+        description="ประวัติการทำรายการทั้งหมดภายในระบบ"
+        actions={
+          <select
+            value={filter}
+            onChange={(e) => {
+              const next = e.target.value;
+              setFilter(next);
+              router.replace(`/admin/history?type=${encodeURIComponent(next)}`);
+            }}
+            className="border rounded-md px-3 py-1 text-sm"
+          >
+            <option value="transaction">คลังของ</option>
+            <option value="request_transaction">รายการคำขอสั่งซื้อ</option>
+          </select>
+        }
+      />
 
       <div className="overflow-y-auto max-h-[600px] pr-[10px]">
         <table className="min-w-full text-sm">

@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import DashboardPageHeader from "@/components/dashboard/DashboardPageHeader";
 
 // แมประหว่างสถานะ DB ↔ ภาษาไทย + สี (เหมือนหน้า Head)
 const STATUS_MAP = {
@@ -104,24 +105,18 @@ export default function HKPurchaseRequestsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <header className="flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-primary)]">
-            รายการคำขอจัดซื้อ
-          </h1>
-          <p className="text-sm text-gray-500">
-            สร้างใบเบิกของ ดูรายละเอียด และคืนของ
-          </p>
-        </div>
-
-        <Link
-          href="/housekeeper/requests/new"
-          className="rounded-lg bg-[var(--color-primary)] text-white px-3 py-2 hover:bg-[var(--color-primary-dark)]"
-        >
-          สร้างคำขอสั่งซื้อ
-        </Link>
-      </header>
+      <DashboardPageHeader
+        title="รายการคำขอจัดซื้อ"
+        description="สร้างใบเบิกของ ดูรายละเอียด และคืนของ"
+        actions={
+          <Link
+            href="/housekeeper/requests/new"
+            className="rounded-lg bg-[var(--color-primary)] text-white px-3 py-2 hover:bg-[var(--color-primary-dark)]"
+          >
+            สร้างคำขอสั่งซื้อ
+          </Link>
+        }
+      />
 
       {/* Search + Filter */}
       <div className="flex flex-wrap gap-2">

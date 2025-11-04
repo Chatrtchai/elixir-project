@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
+import { createConnection } from "@/lib/db";
 
 const COOKIE = "session";
 const getSecret = () =>
@@ -47,15 +48,21 @@ export async function readSession(req) {
 
     // ถ้ารู้ username → อัปเดต Is_Login = 0
     if (sub) {
+      let conn;
       try {
-        const conn = await createConnection();
+        conn = await createConnection();
         await conn.execute(
           "UPDATE `user` SET Is_Login = 0 WHERE Username = ?",
           [sub]
         );
-        await conn.end();
       } catch (err) {
         console.error("Failed to auto logout user:", err);
+      } finally {
+        if (conn) {
+          try {
+            conn.release();
+          } catch {}
+        }
       }
     }
     return null;

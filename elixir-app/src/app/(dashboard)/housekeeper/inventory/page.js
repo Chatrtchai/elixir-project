@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useReactToPrint } from "react-to-print";
+import DashboardPageHeader from "@/components/dashboard/DashboardPageHeader";
 
 export default function HKInventoryPage() {
   const router = useRouter();
@@ -97,38 +98,32 @@ export default function HKInventoryPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--color-primary)]">
-          รายการของทั้งหมด
-        </h1>
-        <div className="flex gap-2">
-          {/* ➕ ปุ่มเพิ่มของ */}
-          <button
-            onClick={() => router.push("/housekeeper/inventory/add")}
-            className="rounded-md border px-3 py-2 text-white text-sm bg-green-600 hover:bg-green-700 cursor-pointer transition"
-          >
-            เพิ่มของ
-          </button>
-
-          {/* ✏️ ปุ่มไปหน้าแก้ไข (จะทำภายหลัง) */}
-          <button
-            onClick={() => router.push("/housekeeper/inventory/edit")}
-            className="rounded-md px-3 py-2 text-black text-sm bg-yellow-500 hover:bg-yellow-600 cursor-pointer transition"
-          >
-            แก้ไขรายการทั้งหมด
-          </button>
-
-          {/* 🖨️ พิมพ์ทั้งหมด */}
-          <button
-            onClick={printAll}
-            disabled={printing}
-            className="rounded-md border px-3 py-2 text-white text-sm bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] disabled:opacity-50 cursor-pointer transition"
-          >
-            {printing ? "กำลังเตรียมพิมพ์..." : "พิมพ์รายการทั้งหมด"}
-          </button>
-        </div>
-      </div>
+      <DashboardPageHeader
+        title="รายการของทั้งหมด"
+        actions={
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              onClick={() => router.push("/housekeeper/inventory/add")}
+              className="rounded-md border px-3 py-2 text-white text-sm bg-green-600 hover:bg-green-700 cursor-pointer transition"
+            >
+              เพิ่มของ
+            </button>
+            <button
+              onClick={() => router.push("/housekeeper/inventory/edit")}
+              className="rounded-md px-3 py-2 text-black text-sm bg-yellow-500 hover:bg-yellow-600 cursor-pointer transition"
+            >
+              แก้ไขรายการทั้งหมด
+            </button>
+            <button
+              onClick={printAll}
+              disabled={printing}
+              className="rounded-md border px-3 py-2 text-white text-sm bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] disabled:opacity-50 cursor-pointer transition"
+            >
+              {printing ? "กำลังเตรียมพิมพ์..." : "พิมพ์รายการทั้งหมด"}
+            </button>
+          </div>
+        }
+      />
 
       {/* Search */}
       <div className="flex gap-2">

@@ -3,6 +3,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import DashboardPageHeader from "@/components/dashboard/DashboardPageHeader";
 
 // แมปสถานะ → ภาษาไทย + สี (ให้แสดงเหมือนหน้าอื่น ๆ)
 const STATUS_MAP = {
@@ -73,16 +74,10 @@ export default function PurchaseRequestsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <header className="flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-primary)]">
-            รายการคำขอจัดซื้อ
-          </h1>
-          <p className="text-sm text-gray-500">
-            สำหรับฝ่ายจัดซื้อ: รับช่วงคำขอที่ Head อนุมัติแล้ว
-          </p>
-        </div>
-      </header>
+      <DashboardPageHeader
+        title="รายการคำขอจัดซื้อ"
+        description="สำหรับฝ่ายจัดซื้อ: รับช่วงคำขอที่ Head อนุมัติแล้ว"
+      />
 
       <div className="flex flex-col md:flex-row gap-3">
         <input

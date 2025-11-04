@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import DashboardPageHeader from "@/components/dashboard/DashboardPageHeader";
 
 export default function HKRequisitionPage() {
   const [q, setQ] = useState("");
@@ -42,23 +43,18 @@ export default function HKRequisitionPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-primary)]">
-            รายการเบิกของ
-          </h1>
-          <p className="text-sm text-gray-500">
-            สร้างใบเบิกของ ดูรายละเอียด และคืนของ
-          </p>
-        </div>
-        <Link
-          href="/housekeeper/requisition/new"
-          className="rounded-lg bg-[var(--color-primary)] text-white px-4 py-2 hover:bg-[var(--color-primary-dark)] text-center transition"
-        >
-          สร้างใบเบิกของ
-        </Link>
-      </header>
+      <DashboardPageHeader
+        title="รายการเบิกของ"
+        description="สร้างใบเบิกของ ดูรายละเอียด และคืนของ"
+        actions={
+          <Link
+            href="/housekeeper/requisition/new"
+            className="rounded-lg bg-[var(--color-primary)] text-white px-4 py-2 hover:bg-[var(--color-primary-dark)] text-center transition"
+          >
+            สร้างใบเบิกของ
+          </Link>
+        }
+      />
 
       {/* Search */}
       <div className="flex gap-2 flex-wrap">

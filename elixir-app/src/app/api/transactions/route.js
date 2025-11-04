@@ -64,11 +64,13 @@ export async function GET(req) {
     }
 
     const [rows] = await conn.execute(sql);
-    await conn.end();
     return NextResponse.json(rows);
   } catch (e) {
     console.error("GET /api/transactions error:", e);
-    await conn.end().catch(() => {});
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  } finally {
+    try {
+      conn.release();
+    } catch {}
   }
 }

@@ -2,6 +2,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import DashboardPageHeader from "@/components/dashboard/DashboardPageHeader";
 
 export default function AddItemPage() {
   const router = useRouter();
@@ -110,11 +111,7 @@ export default function AddItemPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-md mx-auto">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--color-primary)]">
-          เพิ่มของใหม่เข้าคลัง
-        </h1>
-      </div>
+      <DashboardPageHeader title="เพิ่มของใหม่เข้าคลัง" />
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>

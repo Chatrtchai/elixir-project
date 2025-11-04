@@ -28,7 +28,9 @@ export async function GET(req) {
     console.error("GET /api/items", e);
     return NextResponse.json({ error: "server error" }, { status: 500 });
   } finally {
-    await conn.end();
+    try {
+      conn.release();
+    } catch {}
   }
 }
 
@@ -73,9 +75,11 @@ export async function POST(req) {
     if (e.code == "ER_DUP_ENTRY") {
       return NextResponse.json({ error: "สินค้าชื่อดังกล่าวอยู่แล้วภายในคลัง" }, { status: 400 });
     }
-      return NextResponse.json({ error: "server error" }, { status: 500 });
+    return NextResponse.json({ error: "server error" }, { status: 500 });
   } finally {
-    await conn.end();
+    try {
+      conn.release();
+    } catch {}
   }
 }
 

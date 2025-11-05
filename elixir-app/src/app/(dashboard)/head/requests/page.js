@@ -125,12 +125,12 @@ export default function HeadRequestsPage() {
                 </div>
               )}
             </div>
-            <button
+            {/* <button
               onClick={load}
               className="h-12 px-4 rounded-lg border text-sm hover:bg-gray-50"
             >
               รีเฟรช
-            </button>
+            </button> */}
           </div>
 
           {/* ตาราง */}

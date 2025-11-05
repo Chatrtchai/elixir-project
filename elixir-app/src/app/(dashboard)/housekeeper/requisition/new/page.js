@@ -129,9 +129,6 @@ export default function NewWithdrawModal() {
     setShowDD(false);
   };
 
-  const addEmptyLine = () =>
-    setLines((prev) => [...prev, { itemId: "", amount: "" }]);
-
   const removeLine = (i) =>
     setLines((prev) => prev.filter((_, idx) => idx !== i));
 
@@ -322,11 +319,16 @@ export default function NewWithdrawModal() {
                       type="number"
                       min="1"
                       max={l.itemId ? remainNow : undefined}
+                      step="1"
+                      inputMode="numeric"
                       value={l.amount}
                       onChange={(e) => {
-                        const val = e.target.value;
+                        let val = e.target.value;
+                        val = val.replace(/[^\d]/g, "");
+                        let n = parseInt(val || "0", 10);
+
                         const cp = [...lines];
-                        let n = Number(val);
+                        n = Number(val);
                         if (!Number.isFinite(n) || n <= 0) {
                           cp[i].amount = "";
                         } else {

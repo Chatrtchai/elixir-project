@@ -177,6 +177,8 @@ export default function WithdrawReturnModal() {
                             if (!Number.isFinite(n) || n < 0) n = 0;
                             if (n > 1000) n = 1000;
 
+                            n = parseInt(n || "0", 10);
+
                             const cp = [...returns];
                             cp[idx] = cp[idx] || {
                               detailId: d.WD_Id,

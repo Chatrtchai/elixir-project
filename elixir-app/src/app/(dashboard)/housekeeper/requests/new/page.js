@@ -319,26 +319,25 @@ export default function NewHKRequestModal() {
                           type="number"
                           min="1"
                           max="1000"
+                          step="1"
+                          inputMode="numeric"
                           value={l.amount}
                           onChange={(e) => {
-
                             const cp = [...lines];
 
-                            let n = Number(e.target.value);
+                            let val = e.target.value;
+                            val = val.replace(/[^\d]/g, "");
+                            let n = parseInt(val || "0", 10);
 
-                            if (!Number.isFinite(n) || n < 0) { 
-                              n = 1; 
-                            }
-        
-                            if (n > 1000) {
-                              n = 1000;
-                            }
+                            if (!Number.isFinite(n) || n < 0) n = 0;
+                            if (n > 1000) n = 1000;
 
                             cp[i].amount = n;
                             setLines(cp);
                           }}
                           className={
-                            "w-full text-center px-2.5 py-[9px] bg-white rounded-lg"}
+                            "w-full text-center px-2.5 py-[9px] bg-white rounded-lg"
+                          }
                           placeholder="กรอกจำนวน"
                         />
                       </div>

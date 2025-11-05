@@ -1,5 +1,6 @@
 // src/app/api/users/route.js
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createConnection } from "@/lib/db";
 import { readSession } from "@/lib/auth";
 
@@ -110,6 +111,8 @@ export async function POST(req) {
       `,
       [username, password, fullName, role]
     );
+
+    revalidatePath("/admin/users");
 
     return NextResponse.json({ ok: true });
   } catch (e) {

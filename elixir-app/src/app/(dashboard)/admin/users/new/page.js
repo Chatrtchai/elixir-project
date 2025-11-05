@@ -52,12 +52,12 @@ export default function NewUserModal() {
       return false;
     }
 
-    if (form.password && form.password.length < 4) {
+    if (form.password.length < 4) {
       setErr("รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร");
       return false;
     }
 
-    if (form.password && form.password.length > 12) {
+    if (form.password.length > 12) {
       setErr("รหัสผ่านต้องมีความยาวไม่เกิน 12 ตัวอักษร");
       return false;
     }
@@ -86,7 +86,7 @@ export default function NewUserModal() {
 
   return (
     <ModalWrapper title="เพิ่มบัญชีผู้ใช้งาน" width={"w-[600px]"}>
-      <form onSubmit={save} className="space-y-4" onChange={(e) => validateForm()} >
+      <form onSubmit={save} className="space-y-4" onChange={() => validateForm()} >
         {/* username */}
         <div>
           <label className="block text-sm font-medium mb-1">

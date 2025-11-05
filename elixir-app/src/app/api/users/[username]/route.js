@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { createConnection } from "@/lib/db";
 import bcrypt from "bcryptjs";
+import { revalidatePath } from "next/cache";
 
 // helper: ส่ง error เป็น JSON เสมอ
 const jsonError = (message, status = 500) =>
@@ -100,6 +101,12 @@ export async function PATCH(req, { params }) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
+    await Promise.all([
+      revalidatePath("/admin/users"),
+      revalidatePath(`/admin/users/${currentUsername}`),
+      revalidatePath(`/admin/users/${currentUsername}/edit`),
+    ]);
+
     return NextResponse.json({ ok: true });
   } catch (e) {
     if (e.code == "ER_DUP_ENTRY") {
@@ -130,6 +137,11 @@ export async function DELETE(_req, { params }) {
     if (!res?.affectedRows) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
+    await Promise.all([
+      revalidatePath("/admin/users"),
+      revalidatePath(`/admin/users/${username}`),
+      revalidatePath(`/admin/users/${username}/edit`),
+    ]);
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("DELETE /users/[username] error:", e);

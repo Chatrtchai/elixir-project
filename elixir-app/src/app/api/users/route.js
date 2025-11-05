@@ -112,7 +112,7 @@ export async function POST(req) {
       [username, password, fullName, role]
     );
 
-    revalidatePath("/admin/users");
+    await revalidatePath("/admin/users");
 
     return NextResponse.json({ ok: true });
   } catch (e) {

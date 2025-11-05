@@ -86,7 +86,7 @@ export default function NewUserModal() {
 
   return (
     <ModalWrapper title="เพิ่มบัญชีผู้ใช้งาน" width={"w-[600px]"}>
-      <form onSubmit={save} className="space-y-4" onChange={() => validateForm()} >
+      <form onSubmit={save} className="space-y-4">
         {/* username */}
         <div>
           <label className="block text-sm font-medium mb-1">

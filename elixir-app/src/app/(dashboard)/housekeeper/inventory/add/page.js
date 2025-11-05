@@ -122,6 +122,7 @@ export default function AddItemPage() {
               setName(e.target.value);
               setDup(false); // พิมพ์ใหม่ เคลียร์สถานะซ้ำ
             }}
+            maxLength={40}
             className="w-full border rounded-md px-3 py-2"
             placeholder="เช่น น้ำยาถูพื้น"
           />

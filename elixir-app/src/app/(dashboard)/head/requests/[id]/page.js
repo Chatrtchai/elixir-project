@@ -34,8 +34,8 @@ export default function HeadRequestDetailAction() {
   const [rejectError, setRejectError] = useState("");
 
   const rejectOptions = [
-    { value: "not_in_plan", label: "ไม่อยู่ในแผนงาน" },
-    { value: "budget", label: "งบประมาณไม่เพียงพอ" },
+    { value: "overuse", label: "ขอจำนวนเกินการใช้งานจริง" },
+    { value: "enough", label: "สต๊อกยังเหลือพอ / มีของทดแทนในคลัง" },
     { value: "other", label: "อื่นๆ" },
   ];
 
@@ -216,6 +216,9 @@ export default function HeadRequestDetailAction() {
           }
         />
         <Row label="สถานะ" value={TH[data.R_Status] || data.R_Status} />
+        {data.R_Status == "Rejected" && (
+          <Row label="เหตุผล" value={data.R_RejectReason}></Row>
+        )}
         <Row
           label="หัวหน้า"
           value={data.H_Fullname || data.H_Username || "-"}
@@ -227,7 +230,7 @@ export default function HeadRequestDetailAction() {
 
         <div className="pt-2">
           <div className="text-gray-500 mb-1">รายการที่ขอ</div>
-          <div className="overflow-y-auto h-[100px]">
+          <div className="overflow-y-auto h-[50px]">
             <ul className="list-disc list-inside space-y-1">
               {(data.details || []).map((d) => (
                 <li key={d.RD_Id}>
@@ -304,8 +307,7 @@ export default function HeadRequestDetailAction() {
         {rejectOpen && (
           <div className="mt-4 rounded-lg border p-3">
             <div className="text-sm font-medium mb-2">
-              เลือกเหตุผลการปฏิเสธ{" "}
-              <span className="text-rose-500">*</span>
+              เลือกเหตุผลการปฏิเสธ <span className="text-rose-500">*</span>
             </div>
 
             <select
@@ -385,24 +387,30 @@ export default function HeadRequestDetailAction() {
 
         <div className="flex justify-end gap-2">
           {/* ปุ่มอนุมัติ */}
-          {!submitting && data?.R_Status === "Waiting" && !approveOpen && !rejectOpen && (
-            <button
-              onClick={openApprove}
-              className="rounded-md bg-[var(--color-primary)] text-white px-3 py-2 hover:bg-[var(--color-primary-dark)] cursor-pointer"
-            >
-              อนุมัติ
-            </button>
-          )}
+          {!submitting &&
+            data?.R_Status === "Waiting" &&
+            !approveOpen &&
+            !rejectOpen && (
+              <button
+                onClick={openApprove}
+                className="rounded-md bg-[var(--color-primary)] text-white px-3 py-2 hover:bg-[var(--color-primary-dark)] cursor-pointer"
+              >
+                อนุมัติ
+              </button>
+            )}
 
           {/* ปุ่มปฏิเสธ */}
-          {!submitting && data?.R_Status === "Waiting" && !approveOpen && !rejectOpen && (
-            <button
-              onClick={openReject}
-              className="rounded-md border px-3 py-2 text-sm text-white bg-red-500 hover:bg-red-600 cursor-pointer"
-            >
-              ปฏิเสธ
-            </button>
-          )}
+          {!submitting &&
+            data?.R_Status === "Waiting" &&
+            !approveOpen &&
+            !rejectOpen && (
+              <button
+                onClick={openReject}
+                className="rounded-md border px-3 py-2 text-sm text-white bg-red-500 hover:bg-red-600 cursor-pointer"
+              >
+                ปฏิเสธ
+              </button>
+            )}
         </div>
       </div>
     </ModalWrapper>

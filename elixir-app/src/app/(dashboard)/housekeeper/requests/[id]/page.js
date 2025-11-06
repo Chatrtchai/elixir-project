@@ -108,6 +108,9 @@ export default function HKRequestDetailModal() {
           }
         />
         <Row label="สถานะ" value={TH[data.R_Status] || data.R_Status} />
+        {data.R_Status == "Rejected" && (
+          <Row label="เหตุผล" value={data.R_RejectReason}></Row>
+        )}
         <Row
           label="หัวหน้า"
           value={data.H_Fullname || data.H_Username || "-"}

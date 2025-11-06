@@ -177,7 +177,7 @@ export default function NewWithdrawModal() {
 
   // Render (Responsive)
   return (
-    <ModalWrapper title="สร้างรายการเบิก" width="max-w-[600px]">
+    <ModalWrapper title="สร้างรายการเบิก" width="w-[600px]">
       {/* กล่อง modal: กว้างเต็มบนมือถือ, จำกัดความกว้างบนจอใหญ่, สูงไม่เกิน 85vh */}
       <form
         onSubmit={save}

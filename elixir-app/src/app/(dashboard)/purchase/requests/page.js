@@ -76,7 +76,7 @@ export default function PurchaseRequestsPage() {
     <div className="p-6 space-y-6">
       <DashboardPageHeader
         title="รายการคำขอจัดซื้อ"
-        description="สำหรับฝ่ายจัดซื้อ: รับช่วงคำขอที่ Head อนุมัติแล้ว"
+        description="รายการคำขอจัดซื้อที่หัวหน้ามอบหมาย"
       />
 
       <div className="flex flex-col md:flex-row gap-3">

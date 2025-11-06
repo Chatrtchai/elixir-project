@@ -85,6 +85,9 @@ export async function PATCH(req, { params }) {
   const body = await req.json().catch(() => ({}));
   const action = String(body.action || "").toLowerCase();
   const pdDept = body.pdDept ? String(body.pdDept) : "";
+  const rejectReason = body.rejectReason ? String(body.rejectReason) : "";
+  const rejectOther =
+    typeof body.rejectOther === "string" ? body.rejectOther.trim() : "";
 
   const isPUR = role.includes("PURCHASING");
   const isHK = role.includes("HOUSEKEEPER");
@@ -162,14 +165,46 @@ export async function PATCH(req, { params }) {
           { status: 409 }
         );
       }
+      const normalizedReason = rejectReason.toLowerCase();
+      const fallbackReason =
+        typeof body.reason === "string" ? body.reason.trim() : "";
+
+      if (!normalizedReason && !fallbackReason) {
+        await conn.rollback();
+        return NextResponse.json(
+          { error: "reject reason is required" },
+          { status: 400 }
+        );
+      }
+      if (normalizedReason === "other" && !rejectOther) {
+        await conn.rollback();
+        return NextResponse.json(
+          { error: "rejectOther is required when rejectReason is other" },
+          { status: 400 }
+        );
+      }
+
       nextStatus = "Rejected";
-      note = "หัวหน้าปฏิเสธคำขอ";
+      const mappedReason =
+        normalizedReason && normalizedReason !== "other"
+          ? {
+              not_in_plan: "ไม่อยู่ในแผนงาน",
+              budget: "งบประมาณไม่เพียงพอ",
+            }[normalizedReason] || normalizedReason
+          : "";
+      const reasonText =
+        normalizedReason === "other"
+          ? rejectOther
+          : fallbackReason || mappedReason;
+      note = reasonText
+        ? `หัวหน้าปฏิเสธคำขอ (${reasonText})`
+        : "หัวหน้าปฏิเสธคำขอ";
 
       await conn.execute(
-        `UPDATE Request 
-           SET R_Status=?, H_Username=?, R_LastModified=NOW()
+        `UPDATE Request
+           SET R_Status=?, H_Username=?, R_RejectReason=?, R_LastModified=NOW()
          WHERE R_No=?`,
-        [nextStatus, session.sub, id]
+        [nextStatus, session.sub, reasonText || null, id]
       );
 
       await conn.execute(

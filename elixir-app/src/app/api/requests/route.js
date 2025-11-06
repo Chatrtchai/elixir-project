@@ -27,7 +27,7 @@ export async function GET(req) {
         if (Number.isInteger(asNum)) {
           const [result] = await conn.execute(
             `
-            SELECT r.*, h.Fullname AS HeadName, hk.Fullname AS HKName, pd.Fullname AS PDName
+            SELECT r.R_No, R_Status, R_DateTime, HK_Username, PD_Username, H_Username, R_LastModified, R_RejectReason, h.Fullname AS HeadName, hk.Fullname AS HKName, pd.Fullname AS PDName
             FROM REQUEST r
             LEFT JOIN USER h  ON r.H_Username  = h.Username
             LEFT JOIN USER hk ON r.HK_Username = hk.Username

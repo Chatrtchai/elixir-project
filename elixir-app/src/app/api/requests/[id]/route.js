@@ -33,6 +33,7 @@ export async function GET(_req, { params }) {
         r.H_Username,
         r.PD_Username,
         r.R_LastModified,
+        r.R_RejectReason,
         hk.Fullname AS HK_Fullname,
         h.Fullname  AS H_Fullname,
         pd.Fullname AS PD_Fullname
@@ -188,8 +189,8 @@ export async function PATCH(req, { params }) {
       const mappedReason =
         normalizedReason && normalizedReason !== "other"
           ? {
-              not_in_plan: "ไม่อยู่ในแผนงาน",
-              budget: "งบประมาณไม่เพียงพอ",
+              overuse: "ขอจำนวนเกินการใช้งานจริง",
+              enough: "สต๊อกยังเหลือพอ / มีของทดแทนในคลัง",
             }[normalizedReason] || normalizedReason
           : "";
       const reasonText =

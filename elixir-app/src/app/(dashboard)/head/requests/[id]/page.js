@@ -27,6 +27,18 @@ export default function HeadRequestDetailAction() {
   const [pdError, setPdError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // ปฏิเสธ: เลือกเหตุผล
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectOther, setRejectOther] = useState("");
+  const [rejectError, setRejectError] = useState("");
+
+  const rejectOptions = [
+    { value: "not_in_plan", label: "ไม่อยู่ในแผนงาน" },
+    { value: "budget", label: "งบประมาณไม่เพียงพอ" },
+    { value: "other", label: "อื่นๆ" },
+  ];
+
   // รายชื่อผู้ใช้ฝ่ายจัดซื้อ (จาก /api/users?role=Purchasing%20Department)
   const [pdList, setPdList] = useState([]);
   const [pdLoading, setPdLoading] = useState(false);
@@ -72,6 +84,7 @@ export default function HeadRequestDetailAction() {
   // ----- Actions -----
   const openApprove = () => {
     setApproveOpen(true);
+    setRejectOpen(false);
     setPdError("");
   };
 
@@ -107,13 +120,52 @@ export default function HeadRequestDetailAction() {
     }
   };
 
-  const clickReject = async () => {
+  const openReject = () => {
+    setRejectOpen(true);
+    setApproveOpen(false);
+    setRejectReason("");
+    setRejectOther("");
+    setRejectError("");
+  };
+
+  const cancelReject = () => {
+    setRejectOpen(false);
+    setRejectReason("");
+    setRejectOther("");
+    setRejectError("");
+  };
+
+  const confirmReject = async () => {
+    if (!rejectReason) {
+      setRejectError("กรุณาเลือกเหตุผลการปฏิเสธ");
+      return;
+    }
+
+    if (rejectReason === "other" && !rejectOther.trim()) {
+      setRejectError("กรุณากรอกเหตุผลเพิ่มเติม");
+      return;
+    }
+
+    const selectedOption = rejectOptions.find(
+      (option) => option.value === rejectReason
+    );
+    const otherText = rejectReason === "other" ? rejectOther.trim() : "";
+    const resolvedReason =
+      rejectReason === "other"
+        ? otherText
+        : selectedOption?.label || rejectReason;
+
     try {
       setSubmitting(true);
       const res = await fetch(`/api/requests/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "reject" }),
+        body: JSON.stringify({
+          action: "reject",
+          reason: resolvedReason,
+          rejectReason,
+          rejectOther: otherText,
+        }),
       });
       if (!res.ok) throw new Error(await res.text());
       alert("ปฏิเสธคำขอเรียบร้อยแล้ว");
@@ -247,6 +299,78 @@ export default function HeadRequestDetailAction() {
             </div>
           </div>
         )}
+
+        {/* กล่องปฏิเสธ */}
+        {rejectOpen && (
+          <div className="mt-4 rounded-lg border p-3">
+            <div className="text-sm font-medium mb-2">
+              เลือกเหตุผลการปฏิเสธ{" "}
+              <span className="text-rose-500">*</span>
+            </div>
+
+            <select
+              value={rejectReason}
+              onChange={(e) => {
+                setRejectReason(e.target.value);
+                setRejectError("");
+                if (e.target.value !== "other") {
+                  setRejectOther("");
+                }
+              }}
+              className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                rejectError
+                  ? "border-red-400 focus:ring-red-400"
+                  : "border-gray-300 focus:ring-[--color-primary]"
+              }`}
+            >
+              <option value="">-- กรุณาเลือก --</option>
+              {rejectOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+
+            {rejectReason === "other" && (
+              <textarea
+                value={rejectOther}
+                maxLength={100}
+                onChange={(e) => {
+                  setRejectOther(e.target.value);
+                  setRejectError("");
+                }}
+                className={`mt-3 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                  rejectError
+                    ? "border-red-400 focus:ring-red-400"
+                    : "border-gray-300 focus:ring-[--color-primary]"
+                }`}
+                rows={4}
+                placeholder="กรุณาระบุเหตุผล (ไม่เกิน 100 ตัวอักษร)"
+              />
+            )}
+
+            {rejectError && (
+              <div className="text-xs text-red-500 mt-1">{rejectError}</div>
+            )}
+
+            <div className="flex justify-end gap-2 mt-3">
+              <button
+                onClick={cancelReject}
+                className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
+                disabled={submitting || data.R_Status !== "Waiting"}
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={confirmReject}
+                className="rounded-md bg-red-500 text-white px-3 py-2 hover:bg-red-600 disabled:opacity-50"
+                disabled={submitting || data.R_Status !== "Waiting"}
+              >
+                {submitting ? "กำลังยืนยัน..." : "ยืนยัน"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Footer */}
@@ -261,7 +385,7 @@ export default function HeadRequestDetailAction() {
 
         <div className="flex justify-end gap-2">
           {/* ปุ่มอนุมัติ */}
-          {!submitting && data?.R_Status === "Waiting" && !approveOpen && (
+          {!submitting && data?.R_Status === "Waiting" && !approveOpen && !rejectOpen && (
             <button
               onClick={openApprove}
               className="rounded-md bg-[var(--color-primary)] text-white px-3 py-2 hover:bg-[var(--color-primary-dark)] cursor-pointer"
@@ -271,9 +395,9 @@ export default function HeadRequestDetailAction() {
           )}
 
           {/* ปุ่มปฏิเสธ */}
-          {!submitting && data?.R_Status === "Waiting" && !approveOpen && (
+          {!submitting && data?.R_Status === "Waiting" && !approveOpen && !rejectOpen && (
             <button
-              onClick={clickReject}
+              onClick={openReject}
               className="rounded-md border px-3 py-2 text-sm text-white bg-red-500 hover:bg-red-600 cursor-pointer"
             >
               ปฏิเสธ

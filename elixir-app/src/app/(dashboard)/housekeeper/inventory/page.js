@@ -13,6 +13,7 @@ export default function HKInventoryPage() {
   const [loading, setLoading] = useState(false);
   const [printing, setPrinting] = useState(false);
   const [printRows, setPrintRows] = useState([]);
+  const [printedBy, setPrintedBy] = useState("");
 
   // ใช้ยกเลิก request ก่อนหน้าเมื่อพิมพ์ต่อ
   const abortRef = useRef(null);
@@ -60,6 +61,31 @@ export default function HKInventoryPage() {
   // โหลดรอบแรก
   useEffect(() => {
     fetchData("");
+  }, []);
+
+  // โหลดข้อมูลผู้ใช้งานเพื่อนำมาแสดงในหน้าพิมพ์
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/auth/session", {
+          cache: "no-store",
+          credentials: "include",
+        });
+        if (!res.ok) return;
+        const data = await res.json().catch(() => null);
+        if (!cancelled && data?.user) {
+          const name = String(data.user.name || "").trim();
+          const username = String(data.user.username || "").trim();
+          setPrintedBy(name || username || "");
+        }
+      } catch (e) {
+        if (!cancelled) setPrintedBy("");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // ⌨️ พิมพ์แล้วค้นหาอัตโนมัติ (debounce 300ms)
@@ -183,6 +209,9 @@ export default function HKInventoryPage() {
           <h2 className="text-3xl font-semibold mb-1">รายการของทั้งหมด</h2>
           <div className="text-2xl text-gray-500 mb-3">
             ออกรายงานเมื่อ: {formatNow()}
+          </div>
+          <div className="text-2xl text-gray-500 mb-6">
+            พิมพ์โดย: {safe(printedBy || "____________________")}
           </div>
 
           <table>

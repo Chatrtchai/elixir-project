@@ -60,7 +60,7 @@ export async function GET(req) {
       LEFT JOIN withdraw_detail wd ON wd.WL_No = wl.WL_No
       ${whereSql}
       GROUP BY wl.WL_No
-      ORDER BY wl.WL_No DESC
+      ORDER BY wl.WL_Finish_DateTime DESC
       `,
       args
     );

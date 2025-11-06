@@ -42,7 +42,7 @@ export async function GET(req) {
           const like = `%${q}%`;
           const [result] = await conn.execute(
             `
-            SELECT r.*, h.Fullname AS HeadName, hk.Fullname AS HKName, pd.Fullname AS PDName
+            SELECT r.R_No, r.R_Status, r.R_DateTime, r.HK_Username, r.PD_Username, r.H_Username, r.R_LastModified, r.R_RejectReason, h.Fullname AS HeadName, hk.Fullname AS HKName, pd.Fullname AS PDName
             FROM REQUEST r
             LEFT JOIN USER h  ON r.H_Username  = h.Username
             LEFT JOIN USER hk ON r.HK_Username = hk.Username
@@ -58,7 +58,7 @@ export async function GET(req) {
       } else {
         const [result] = await conn.execute(
           `
-          SELECT r.*, h.Fullname AS HeadName, hk.Fullname AS HKName, pd.Fullname AS PDName
+          SELECT r.R_No, r.R_Status, r.R_DateTime, r.HK_Username, r.PD_Username, r.H_Username, r.R_LastModified, r.R_RejectReason, h.Fullname AS HeadName, hk.Fullname AS HKName, pd.Fullname AS PDName
           FROM REQUEST r
           LEFT JOIN USER h  ON r.H_Username  = h.Username
           LEFT JOIN USER hk ON r.HK_Username = hk.Username
@@ -77,7 +77,7 @@ export async function GET(req) {
       const like = `%${q}%`;
       const [result] = await conn.execute(
         `
-        SELECT r.*, h.Fullname AS HeadName, hk.Fullname AS HKName, pd.Fullname AS PDName
+        SELECT r.R_No, r.R_Status, r.R_DateTime, r.HK_Username, r.PD_Username, r.H_Username, r.R_LastModified, r.R_RejectReason, h.Fullname AS HeadName, hk.Fullname AS HKName, pd.Fullname AS PDName
         FROM REQUEST r
         LEFT JOIN USER h  ON r.H_Username  = h.Username
         LEFT JOIN USER hk ON r.HK_Username = hk.Username
@@ -87,7 +87,7 @@ export async function GET(req) {
             ? "WHERE (h.Fullname LIKE ? OR hk.Fullname LIKE ? OR pd.Fullname LIKE ? OR r.R_Status LIKE ? OR r.R_No LIKE ?)"
             : ""
         }
-        ORDER BY r.R_No DESC
+        ORDER BY r.R_LastModified DESC
         `,
         q ? [like, like, like, like, like] : []
       );
@@ -101,7 +101,7 @@ export async function GET(req) {
         if (Number.isInteger(asNum)) {
           const [result] = await conn.execute(
             `
-            SELECT r.*, h.Fullname AS HeadName, hk.Fullname AS HKName, pd.Fullname AS PDName
+            SELECT r.R_No, r.R_Status, r.R_DateTime, r.HK_Username, r.PD_Username, r.H_Username, r.R_LastModified, r.R_RejectReason, h.Fullname AS HeadName, hk.Fullname AS HKName, pd.Fullname AS PDName
             FROM REQUEST r
             LEFT JOIN USER h  ON r.H_Username  = h.Username
             LEFT JOIN USER hk ON r.HK_Username = hk.Username
@@ -116,14 +116,14 @@ export async function GET(req) {
           const like = `%${q}%`;
           const [result] = await conn.execute(
             `
-            SELECT r.*, h.Fullname AS HeadName, hk.Fullname AS HKName, pd.Fullname AS PDName
+            SELECT r.R_No, r.R_Status, r.R_DateTime, r.HK_Username, r.PD_Username, r.H_Username, r.R_LastModified, r.R_RejectReason, h.Fullname AS HeadName, hk.Fullname AS HKName, pd.Fullname AS PDName
             FROM REQUEST r
             LEFT JOIN USER h  ON r.H_Username  = h.Username
             LEFT JOIN USER hk ON r.HK_Username = hk.Username
             LEFT JOIN USER pd ON r.PD_Username = pd.Username
             WHERE r.PD_Username = ?
               AND (h.Fullname LIKE ? OR hk.Fullname LIKE ? OR pd.Fullname LIKE ? OR r.R_Status LIKE ?)
-            ORDER BY r.R_No DESC
+            ORDER BY r.R_LastModified DESC
             `,
             [session.sub, like, like, like, like]
           );
@@ -132,7 +132,7 @@ export async function GET(req) {
       } else {
         const [result] = await conn.execute(
           `
-          SELECT r.*, h.Fullname AS HeadName, hk.Fullname AS HKName, pd.Fullname AS PDName
+          SELECT r.R_No, r.R_Status, r.R_DateTime, r.HK_Username, r.PD_Username, r.H_Username, r.R_LastModified, r.R_RejectReason, h.Fullname AS HeadName, hk.Fullname AS HKName, pd.Fullname AS PDName
           FROM REQUEST r
           LEFT JOIN USER h  ON r.H_Username  = h.Username
           LEFT JOIN USER hk ON r.HK_Username = hk.Username
